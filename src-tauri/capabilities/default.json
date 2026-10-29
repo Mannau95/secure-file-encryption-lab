@@ -1,0 +1,22 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicegram/nicegram-schemas/master/tauri-v2/capability.schema.json",
+  "identifier": "default",
+  "description": "Minimum permissions for SFEL - no network, no shell, no clipboard",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "dialog:default",
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "dialog:allow-message",
+    "dialog:allow-ask",
+    "fs:default",
+    "fs:allow-read",
+    "fs:allow-write",
+    "fs:allow-exists",
+    "fs:allow-remove",
+    "fs:allow-rename",
+    "fs:allow-mkdir",
+    "fs:allow-stat"
+  ]
+}

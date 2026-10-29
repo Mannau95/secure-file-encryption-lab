@@ -1,0 +1,43 @@
+[package]
+name = "secure-file-encryption-lab"
+version = "0.1.0"
+description = "Professional desktop file encryption using AES-256-GCM and Argon2id"
+authors = ["SFEL Developer"]
+license = "MIT OR Apache-2.0"
+edition = "2024"
+rust-version = "1.85"
+
+[lib]
+name = "sfel_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["devtools"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+
+# Cryptography (RustCrypto ecosystem)
+aes-gcm = "0.11"
+argon2 = "0.6"
+rand = { version = "0.9", features = ["os_rng"] }
+zeroize = { version = "1", features = ["derive", "aarch64"] }
+
+# Utilities
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+tempfile = "3"
+sha2 = "0.10"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+opt-level = "s"

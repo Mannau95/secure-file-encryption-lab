@@ -1,0 +1,27 @@
+{
+  "name": "secure-file-encryption-lab",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A professional desktop file encryption application using AES-256-GCM and Argon2id",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "tauri": "tauri"
+  },
+  "license": "(MIT OR Apache-2.0)",
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.6.0",
+    "@tauri-apps/api": "^2.5.0",
+    "@tauri-apps/plugin-dialog": "^2.2.0",
+    "@tauri-apps/plugin-fs": "^2.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.5.2",
+    "vite": "^6.3.0",
+    "@tauri-apps/cli": "^2.5.0"
+  }
+}
