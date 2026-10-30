@@ -1,10 +1,10 @@
+use rand::TryRngCore;
 use rand::rngs::OsRng;
-use rand::RngCore;
 
 /// Fills the given destination slice with cryptographically secure random bytes
 /// retrieved directly from the operating system's CSPRNG (OsRng).
 pub fn fill_random(dest: &mut [u8]) {
-    OsRng.fill_bytes(dest);
+    OsRng.try_fill_bytes(dest).expect("failed to read from OS CSPRNG");
 }
 
 /// Generates a fixed-size array of cryptographically secure random bytes.

@@ -31,7 +31,7 @@ pub fn encrypt_single(
     plaintext: &[u8],
 ) -> Result<Vec<u8>, SfelError> {
     let cipher = Aes256Gcm::new(key.into());
-    let gcm_nonce = Nonce::from_slice(nonce);
+    let gcm_nonce = Nonce::from(*nonce);
 
     let payload = Payload {
         msg: plaintext,
@@ -39,7 +39,7 @@ pub fn encrypt_single(
     };
 
     cipher
-        .encrypt(gcm_nonce, payload)
+        .encrypt(&gcm_nonce, payload)
         .map_err(|_| SfelError::IntegrityError)
 }
 
@@ -58,7 +58,7 @@ pub fn decrypt_single(
     }
 
     let cipher = Aes256Gcm::new(key.into());
-    let gcm_nonce = Nonce::from_slice(nonce);
+    let gcm_nonce = Nonce::from(*nonce);
 
     let payload = Payload {
         msg: ciphertext_and_tag,
@@ -66,7 +66,7 @@ pub fn decrypt_single(
     };
 
     cipher
-        .decrypt(gcm_nonce, payload)
+        .decrypt(&gcm_nonce, payload)
         .map_err(|_| SfelError::AuthenticationFailed)
 }
 

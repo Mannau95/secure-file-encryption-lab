@@ -9,7 +9,6 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "title": "Secure File Encryption Lab",
     "windows": [
       {
         "title": "Secure File Encryption Lab",
