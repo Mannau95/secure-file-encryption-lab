@@ -4,7 +4,7 @@ use serde::Serialize;
 /// 
 /// Error messages are intentionally vague for authentication and integrity
 /// failures to avoid providing oracles to attackers.
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum SfelError {
     #[error("File not found: {0}")]
     FileNotFound(String),
