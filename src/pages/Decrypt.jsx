@@ -4,7 +4,9 @@ import FileDropZone from '../components/FileDropZone';
 import PasswordInput from '../components/PasswordInput';
 import ProgressBar from '../components/ProgressBar';
 import StatusMessage from '../components/StatusMessage';
+import BatchDecryptQueue from '../components/BatchDecryptQueue';
 import { useDecrypt } from '../hooks/useDecrypt';
+import { useBatchDecrypt } from '../hooks/useBatchDecrypt';
 import { useI18n } from '../contexts/I18nContext';
 import { getFilenameFromPath } from '../utils/formatters';
 import { validateDestination } from '../utils/validators';
@@ -16,6 +18,7 @@ function isTauriEnvironment() {
 
 export function Decrypt() {
   const { t } = useI18n();
+  const [activeTab, setActiveTab] = useState('single'); // 'single' | 'batch'
   const [selectedFile, setSelectedFile] = useState(null);
   const [password, setPassword] = useState('');
   const [destinationPath, setDestinationPath] = useState('');
@@ -30,6 +33,8 @@ export function Decrypt() {
     cancel,
     reset,
   } = useDecrypt();
+
+  const batch = useBatchDecrypt();
 
   // Auto-suggest destination path when file is selected
   useEffect(() => {
@@ -132,102 +137,166 @@ export function Decrypt() {
       <div className="page-header-block">
         <h2 className="flow-title">{t('decrypt.pageTitle')}</h2>
         <p className="flow-subtitle">{t('decrypt.pageSubtitle')}</p>
+
+        {/* Mode Switcher Tabs */}
+        <div className="encrypt-mode-tabs" role="tablist" aria-label="Mode de déchiffrement">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'single'}
+            className={`mode-tab-btn ${activeTab === 'single' ? 'active' : ''}`}
+            onClick={() => setActiveTab('single')}
+            disabled={status === 'running' || batch.status === 'running'}
+          >
+            <span>📄</span>
+            <span>{t('batchDecrypt.tabSingle')}</span>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'batch'}
+            className={`mode-tab-btn ${activeTab === 'batch' ? 'active' : ''}`}
+            onClick={() => {
+              if (selectedFile && batch.queue.length === 0) {
+                batch.addFiles([selectedFile]);
+              }
+              setActiveTab('batch');
+            }}
+            disabled={status === 'running' || batch.status === 'running'}
+          >
+            <span>📚</span>
+            <span>{t('batchDecrypt.tabBatch')}</span>
+            {batch.queue.length > 0 && (
+              <span className="mode-tab-badge">{batch.queue.length}</span>
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* Success State */}
-      {status === 'success' && result && (
-        <div className="flow-outcome-container">
-          <StatusMessage
-            type="success"
-            title={t('decrypt.successTitle')}
-            message={t('decrypt.successMsg')}
-            outputPath={result.outputPath}
-            actionButton={
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleResetFlow}
-              >
-                {t('decrypt.decryptAnother')}
-              </button>
-            }
-          />
-        </div>
+      {/* BATCH DECRYPT QUEUE TAB */}
+      {activeTab === 'batch' && (
+        <BatchDecryptQueue
+          queue={batch.queue}
+          status={batch.status}
+          currentIndex={batch.currentIndex}
+          currentProgress={batch.currentProgress}
+          overallStats={batch.overallStats}
+          onAddFiles={batch.addFiles}
+          onRemoveFile={batch.removeFile}
+          onClearQueue={batch.clearQueue}
+          onStartBatch={batch.startBatch}
+          onCancelBatch={batch.cancelBatch}
+          onResetQueue={batch.resetQueueStatus}
+          onRetryFailed={batch.retryFailed}
+        />
       )}
 
-      {/* Error State */}
-      {status === 'error' && error && (
-        <div className="flow-outcome-container">
-          <StatusMessage
-            type="error"
-            title={t('decrypt.errorTitle')}
-            message={error}
-            actionButton={
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => reset()}
-              >
-                {t('common.tryAgain')}
-              </button>
-            }
-          />
-        </div>
-      )}
-
-      {/* Running / In-Progress State */}
-      {status === 'running' && (
-        <div className="flow-progress-section">
-          <ProgressBar
-            percentage={progress.percentage}
-            bytesProcessed={progress.bytesProcessed}
-            totalBytes={progress.totalBytes}
-            stageDescription={progress.stageDescription}
-            elapsedSeconds={progress.elapsedSeconds}
-            onCancel={cancel}
-            label="Decryption Progress"
-          />
-        </div>
-      )}
-
-      {/* Form (Active when not completed or running) */}
-      {status !== 'running' && status !== 'success' && (
-        <form className="flow-form" onSubmit={handleStartDecrypt} noValidate>
-          {/* Step 1: File Selection */}
-          <div className="form-step-card">
-            <div className="step-header">
-              <span className="step-number" aria-hidden="true">1</span>
-              <div>
-                <h3 className="step-heading">{t('decrypt.step1Title')}</h3>
-                <p className="step-desc">{t('decrypt.step1Desc')}</p>
-              </div>
-            </div>
-
-            <div className="step-body">
-              <FileDropZone
-                selectedFile={selectedFile}
-                accept={['.sfel']}
-                label="Drop .sfel file here or click to browse"
-                description="Only files ending with .sfel are recognized as SFEL archives"
-                onFileSelect={(f) => {
-                  setSelectedFile(f);
-                  setClientErrors((prev) => ({ ...prev, file: null }));
-                }}
-                onClear={() => {
-                  setSelectedFile(null);
-                  setDestinationPath('');
-                }}
-                disabled={status === 'running'}
+      {/* SINGLE FILE TAB */}
+      {activeTab === 'single' && (
+        <>
+          {/* Success State */}
+          {status === 'success' && result && (
+            <div className="flow-outcome-container">
+              <StatusMessage
+                type="success"
+                title={t('decrypt.successTitle')}
+                message={t('decrypt.successMsg')}
+                outputPath={result.outputPath}
+                actionButton={
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleResetFlow}
+                  >
+                    {t('decrypt.decryptAnother')}
+                  </button>
+                }
               />
-              {clientErrors.file && (
-                <p className="client-error-text" role="alert">
-                  {clientErrors.file}
-                </p>
-              )}
             </div>
-          </div>
+          )}
 
-          {/* Step 2: Password Input (No confirmation for Decrypt) */}
+          {/* Error State */}
+          {status === 'error' && error && (
+            <div className="flow-outcome-container">
+              <StatusMessage
+                type="error"
+                title={t('decrypt.errorTitle')}
+                message={error}
+                actionButton={
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => reset()}
+                  >
+                    {t('common.tryAgain')}
+                  </button>
+                }
+              />
+            </div>
+          )}
+
+          {/* Running / In-Progress State */}
+          {status === 'running' && (
+            <div className="flow-progress-section">
+              <ProgressBar
+                percentage={progress.percentage}
+                bytesProcessed={progress.bytesProcessed}
+                totalBytes={progress.totalBytes}
+                stageDescription={progress.stageDescription}
+                elapsedSeconds={progress.elapsedSeconds}
+                onCancel={cancel}
+                label="Decryption Progress"
+              />
+            </div>
+          )}
+
+          {/* Form (Active when not completed or running) */}
+          {status !== 'running' && status !== 'success' && (
+            <form className="flow-form" onSubmit={handleStartDecrypt} noValidate>
+              {/* Step 1: File Selection */}
+              <div className="form-step-card">
+                <div className="step-header">
+                  <span className="step-number" aria-hidden="true">1</span>
+                  <div>
+                    <h3 className="step-heading">{t('decrypt.step1Title')}</h3>
+                    <p className="step-desc">{t('decrypt.step1Desc')}</p>
+                  </div>
+                </div>
+
+                <div className="step-body">
+                  <FileDropZone
+                    multiple={true}
+                    selectedFile={selectedFile}
+                    accept={['.sfel']}
+                    onFileSelect={(f) => {
+                      setSelectedFile(f);
+                      setClientErrors((prev) => ({ ...prev, file: null }));
+                    }}
+                    onFilesSelect={(files) => {
+                      if (files.length === 1) {
+                        setSelectedFile(files[0]);
+                        setClientErrors((prev) => ({ ...prev, file: null }));
+                      } else if (files.length > 1) {
+                        batch.addFiles(files);
+                        setActiveTab('batch');
+                      }
+                    }}
+                    onClear={() => {
+                      setSelectedFile(null);
+                      setDestinationPath('');
+                    }}
+                    disabled={status === 'running'}
+                  />
+                  {clientErrors.file && (
+                    <p className="client-error-text" role="alert">
+                      {clientErrors.file}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Step 2: Password Input (No confirmation for Decrypt) */}
           <div className="form-step-card">
             <div className="step-header">
               <span className="step-number" aria-hidden="true">2</span>
@@ -321,6 +390,8 @@ export function Decrypt() {
             </button>
           </div>
         </form>
+      )}
+        </>
       )}
     </div>
   );
