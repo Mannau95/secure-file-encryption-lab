@@ -81,8 +81,8 @@ export function useEncrypt() {
   };
 
   const encrypt = useCallback(
-    async ({ inputPath, outputPath, password, fileSize = 0 }) => {
-      if (!inputPath || !outputPath || !password) {
+    async ({ inputPath, outputPath, password, fileSize = 0, profile = 'standard' }) => {
+      if (!inputPath || !password) {
         setError('Missing required parameters for encryption.');
         setStatus('error');
         return;
@@ -102,6 +102,9 @@ export function useEncrypt() {
       }, 500);
 
       const filename = getFilenameFromPath(inputPath);
+      const destDir = outputPath 
+        ? outputPath.replace(/[/\\][^/\\]+$/, '') 
+        : inputPath.replace(/[/\\][^/\\]+$/, '');
 
       if (!isTauriEnvironment()) {
         const errorMsg = 'Tauri runtime not detected. Application must run inside the Tauri desktop window.';
@@ -113,7 +116,7 @@ export function useEncrypt() {
           operationType: 'encrypt',
           filename,
           inputPath,
-          outputPath,
+          outputPath: outputPath || `${inputPath}.sfel`,
           fileSize,
           status: 'failed',
           errorMessage: errorMsg,
@@ -149,11 +152,13 @@ export function useEncrypt() {
         unlistenRefs.current = [u1, u2, u3];
 
         // Invoke Tauri command
-        // Note: arguments are provided in both camelCase and snake_case format compatible with Tauri serde
         const response = await invoke('cmd_encrypt', {
-          inputPath,
-          outputPath,
+          sourcePath: inputPath,
+          source_path: inputPath,
+          destDir: destDir || '.',
+          dest_dir: destDir || '.',
           password,
+          profile: profile || 'standard',
         });
 
         if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
@@ -164,8 +169,9 @@ export function useEncrypt() {
         }
 
         const durationMs = Date.now() - (startTimeRef.current || Date.now());
+        const finalPath = typeof response === 'string' ? response : (response?.outputPath || outputPath || `${inputPath}.sfel`);
         const outputResult = {
-          outputPath: (response && response.outputPath) || outputPath,
+          outputPath: finalPath,
           bytesEncrypted: fileSize,
           durationMs,
         };

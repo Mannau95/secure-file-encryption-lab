@@ -79,35 +79,36 @@ export function Settings() {
         <section className="settings-card" aria-labelledby="crypto-heading">
           <div className="card-header-with-badge">
             <h3 id="crypto-heading" className="card-section-title">
-              Cryptographic Parameters
+              Cryptographic Parameters & Profiles
             </h3>
-            <span className="readonly-badge">Read Only (RFC Standard)</span>
+            <span className="readonly-badge">RFC 9106 Standard</span>
           </div>
           <p className="crypto-params-intro">
             SFEL employs hardened, standardized parameters designed to resist GPU clustering and ASIC
-            attacks while completing key derivation in &sim;1 second on modern desktop CPUs.
+            attacks. The active profile parameters (m_cost, t_cost, p_cost) are embedded into each container's
+            header to ensure 100% interoperable, tamper-proof decryption.
           </p>
 
           <div className="params-table">
             <div className="param-row">
               <span className="param-name">Symmetric Cipher</span>
-              <span className="param-value">AES-256-GCM (Galois/Counter Mode)</span>
+              <span className="param-value">AES-256-GCM (Galois/Counter Mode, 128-bit MAC)</span>
             </div>
             <div className="param-row">
               <span className="param-name">Key Derivation (KDF)</span>
               <span className="param-value">Argon2id (RFC 9106)</span>
             </div>
             <div className="param-row">
-              <span className="param-name">Memory Cost (m_cost)</span>
-              <span className="param-value">64 MiB (65,536 KiB)</span>
+              <span className="param-name">Profile: Fast</span>
+              <span className="param-value">32 MiB RAM • 2 iterations • 2 lanes</span>
             </div>
             <div className="param-row">
-              <span className="param-name">Time Cost (t_cost)</span>
-              <span className="param-value">3 iterations</span>
+              <span className="param-name">Profile: Standard (Default)</span>
+              <span className="param-value">64 MiB RAM • 3 iterations • 4 lanes</span>
             </div>
             <div className="param-row">
-              <span className="param-name">Parallelism (p_cost)</span>
-              <span className="param-value">4 lanes (threads)</span>
+              <span className="param-name">Profile: Paranoid</span>
+              <span className="param-value">256 MiB RAM • 5 iterations • 8 lanes</span>
             </div>
             <div className="param-row">
               <span className="param-name">Salt Size</span>
@@ -118,12 +119,8 @@ export function Settings() {
               <span className="param-value">12 bytes (96 bits per chunk)</span>
             </div>
             <div className="param-row">
-              <span className="param-name">Authentication Tag</span>
-              <span className="param-value">16 bytes (128 bits GCM MAC)</span>
-            </div>
-            <div className="param-row">
               <span className="param-name">Streaming Chunk Size</span>
-              <span className="param-value">64 KiB chunks</span>
+              <span className="param-value">1 MiB (1,048,576 bytes) chunks with AAD binding</span>
             </div>
           </div>
         </section>

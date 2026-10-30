@@ -18,6 +18,7 @@ export function Encrypt() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [destinationPath, setDestinationPath] = useState('');
+  const [profile, setProfile] = useState('standard');
   const [clientErrors, setClientErrors] = useState({});
 
   const {
@@ -106,6 +107,7 @@ export function Encrypt() {
       outputPath: destinationPath,
       password: password,
       fileSize: selectedFile.size || 0,
+      profile: profile,
     });
   };
 
@@ -264,10 +266,70 @@ export function Encrypt() {
             </div>
           </div>
 
-          {/* Step 3: Destination Selection */}
+          {/* Step 3: Argon2id Security Profile */}
           <div className="form-step-card">
             <div className="step-header">
               <span className="step-number" aria-hidden="true">3</span>
+              <div>
+                <h3 className="step-heading">Cryptographic Strength Profile</h3>
+                <p className="step-desc">Configure Argon2id memory hardness and computational work factor.</p>
+              </div>
+            </div>
+
+            <div className="step-body">
+              <div className="profiles-grid">
+                <label className={`profile-card ${profile === 'fast' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="argon2-profile"
+                    value="fast"
+                    checked={profile === 'fast'}
+                    onChange={() => setProfile('fast')}
+                    className="profile-radio"
+                  />
+                  <div className="profile-badge">⚡ Fast</div>
+                  <div className="profile-title">Low Resource</div>
+                  <div className="profile-spec">32 MiB RAM • 2 iterations</div>
+                  <p className="profile-desc">Quick processing for large media or less sensitive documents.</p>
+                </label>
+
+                <label className={`profile-card ${profile === 'standard' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="argon2-profile"
+                    value="standard"
+                    checked={profile === 'standard'}
+                    onChange={() => setProfile('standard')}
+                    className="profile-radio"
+                  />
+                  <div className="profile-badge recommended">🛡️ Recommended</div>
+                  <div className="profile-title">Standard RFC 9106</div>
+                  <div className="profile-spec">64 MiB RAM • 3 iterations</div>
+                  <p className="profile-desc">Optimal trade-off: strong GPU resistance with ~1 sec latency.</p>
+                </label>
+
+                <label className={`profile-card ${profile === 'paranoid' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="argon2-profile"
+                    value="paranoid"
+                    checked={profile === 'paranoid'}
+                    onChange={() => setProfile('paranoid')}
+                    className="profile-radio"
+                  />
+                  <div className="profile-badge paranoid">🔒 Paranoid</div>
+                  <div className="profile-title">High Security</div>
+                  <div className="profile-spec">256 MiB RAM • 5 iterations</div>
+                  <p className="profile-desc">Thwarts supercomputer ASIC farms for highly sensitive data.</p>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 4: Destination Selection */}
+          <div className="form-step-card">
+            <div className="step-header">
+              <span className="step-number" aria-hidden="true">4</span>
               <div>
                 <h3 className="step-heading">Output Destination</h3>
                 <p className="step-desc">Choose where the encrypted file will be created.</p>

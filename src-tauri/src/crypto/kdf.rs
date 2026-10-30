@@ -36,6 +36,54 @@ impl Default for KdfParams {
     }
 }
 
+/// Configurable Argon2id security profiles for encryption.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Argon2Profile {
+    /// Fast / Low-Resource profile: 32 MiB, 2 iterations, 2 lanes.
+    Fast,
+    /// Standard profile (default): 64 MiB, 3 iterations, 4 lanes.
+    Standard,
+    /// Paranoid / High-Security profile: 256 MiB, 5 iterations, 8 lanes.
+    Paranoid,
+}
+
+impl Argon2Profile {
+    pub fn params(&self) -> KdfParams {
+        match self {
+            Argon2Profile::Fast => KdfParams {
+                memory_kib: 32_768,
+                iterations: 2,
+                parallelism: 2,
+            },
+            Argon2Profile::Standard => KdfParams {
+                memory_kib: DEFAULT_MEMORY_KIB,
+                iterations: DEFAULT_ITERATIONS,
+                parallelism: DEFAULT_PARALLELISM,
+            },
+            Argon2Profile::Paranoid => KdfParams {
+                memory_kib: 262_144,
+                iterations: 5,
+                parallelism: 8,
+            },
+        }
+    }
+
+    pub fn from_str_opt(s: Option<&str>) -> Self {
+        match s.map(|v| v.to_ascii_lowercase()).as_deref() {
+            Some("fast") => Argon2Profile::Fast,
+            Some("paranoid") => Argon2Profile::Paranoid,
+            _ => Argon2Profile::Standard,
+        }
+    }
+}
+
+impl Default for Argon2Profile {
+    fn default() -> Self {
+        Argon2Profile::Standard
+    }
+}
+
 /// Derives a 256-bit cryptographic key from a password and salt using Argon2id.
 ///
 /// The returned key is wrapped in `Zeroizing` to ensure memory is wiped securely
@@ -118,5 +166,26 @@ mod tests {
         let salt = [0u8; 16];
         let result = derive_key(b"pass", &salt, &invalid_params);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_argon2_profiles() {
+        assert_eq!(Argon2Profile::from_str_opt(Some("fast")), Argon2Profile::Fast);
+        assert_eq!(Argon2Profile::from_str_opt(Some("standard")), Argon2Profile::Standard);
+        assert_eq!(Argon2Profile::from_str_opt(Some("paranoid")), Argon2Profile::Paranoid);
+        assert_eq!(Argon2Profile::from_str_opt(None), Argon2Profile::Standard);
+        assert_eq!(Argon2Profile::from_str_opt(Some("unknown")), Argon2Profile::Standard);
+
+        let fast_params = Argon2Profile::Fast.params();
+        assert_eq!(fast_params.memory_kib, 32_768);
+        assert_eq!(fast_params.iterations, 2);
+
+        let standard_params = Argon2Profile::Standard.params();
+        assert_eq!(standard_params.memory_kib, 65_536);
+        assert_eq!(standard_params.iterations, 3);
+
+        let paranoid_params = Argon2Profile::Paranoid.params();
+        assert_eq!(paranoid_params.memory_kib, 262_144);
+        assert_eq!(paranoid_params.iterations, 5);
     }
 }

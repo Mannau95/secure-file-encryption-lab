@@ -112,12 +112,22 @@ export function PasswordInput({
 
         {/* Strength Meter Bar */}
         {password.length > 0 && (
-          <div className="strength-meter-bar" aria-hidden="true">
-            <div
-              className={`strength-fill ${getStrengthClass(evaluation.score)}`}
-              style={{ width: `${Math.max(15, (evaluation.score / 4) * 100)}%` }}
-            />
-          </div>
+          <>
+            <div className="strength-meter-bar" aria-hidden="true">
+              <div
+                className={`strength-fill ${getStrengthClass(evaluation.score)}`}
+                style={{ width: `${Math.max(15, (evaluation.score / 4) * 100)}%` }}
+              />
+            </div>
+            <div className="entropy-stats-row">
+              <span className="entropy-stat-tag">
+                🔒 ~<strong>{evaluation.entropyBits} bits</strong> d'entropie
+              </span>
+              <span className="entropy-stat-tag crack-time">
+                ⏱️ Brute-force : <strong>{evaluation.crackTime}</strong>
+              </span>
+            </div>
+          </>
         )}
 
         <div id={`${inputId}-help`} className="field-hint">

@@ -9,7 +9,7 @@ use zeroize::Zeroize;
 use crate::commands::cancel::{is_cancelled, reset_cancel};
 use crate::crypto::aead::{encrypt_single, SINGLE_MODE_MAX_SIZE};
 use crate::crypto::chunks::encrypt_stream;
-use crate::crypto::kdf::{derive_key, KdfParams, DEFAULT_ITERATIONS, DEFAULT_MEMORY_KIB, DEFAULT_PARALLELISM};
+use crate::crypto::kdf::{derive_key, Argon2Profile};
 use crate::crypto::rng::{random_base_nonce, random_nonce, random_salt};
 use crate::error::SfelError;
 use crate::format::header::{EncryptionMode, SfelHeader};
@@ -24,15 +24,29 @@ pub struct ProgressPayload {
     pub total_bytes: u64,
 }
 
-/// Core file encryption engine.
-///
-/// Encrypts `source_path` with `password` using AES-256-GCM and Argon2id.
-/// Automatically selects single-shot mode (<= 1 MiB) or chunked streaming mode (> 1 MiB).
-/// Emits progress through the `progress` callback.
+/// Core file encryption engine with default (Standard) parameters.
 pub fn encrypt_file<P>(
     source_path: &Path,
     password: &str,
     dest_dir: &Path,
+    progress: P,
+) -> Result<PathBuf, SfelError>
+where
+    P: FnMut(f64, u64, u64),
+{
+    encrypt_file_with_profile(source_path, password, dest_dir, None, progress)
+}
+
+/// Core file encryption engine with configurable Argon2id profile.
+///
+/// Encrypts `source_path` with `password` using AES-256-GCM and Argon2id.
+/// Automatically selects single-shot mode (<= 1 MiB) or chunked streaming mode (> 1 MiB).
+/// Emits progress through the `progress` callback.
+pub fn encrypt_file_with_profile<P>(
+    source_path: &Path,
+    password: &str,
+    dest_dir: &Path,
+    profile: Option<Argon2Profile>,
     mut progress: P,
 ) -> Result<PathBuf, SfelError>
 where
@@ -75,11 +89,14 @@ where
         (EncryptionMode::Chunked, n, base)
     };
 
+    let kdf_profile = profile.unwrap_or_default();
+    let kdf_params = kdf_profile.params();
+
     let header = SfelHeader::new(
         mode,
-        DEFAULT_MEMORY_KIB,
-        DEFAULT_ITERATIONS,
-        DEFAULT_PARALLELISM,
+        kdf_params.memory_kib,
+        kdf_params.iterations,
+        kdf_params.parallelism,
         salt,
         nonce,
         total_bytes,
@@ -89,11 +106,6 @@ where
     let header_bytes = header.to_bytes()?;
 
     // 4. Derive encryption key using Argon2id
-    let kdf_params = KdfParams {
-        memory_kib: header.argon2_memory,
-        iterations: header.argon2_iterations,
-        parallelism: header.argon2_parallelism,
-    };
     let key = derive_key(password.as_bytes(), &salt, &kdf_params)?;
 
     // 5. Initialize temp file in target directory for atomic write
@@ -142,18 +154,21 @@ where
     Ok(dest_path)
 }
 
-/// Tauri command handler for file encryption.
+/// Tauri command handler for file encryption with optional Argon2id profile.
 #[tauri::command]
 pub fn cmd_encrypt(
     app: AppHandle,
     source_path: String,
     mut password: String,
     dest_dir: String,
+    profile: Option<String>,
 ) -> Result<String, SfelError> {
-    let result = encrypt_file(
+    let kdf_profile = Argon2Profile::from_str_opt(profile.as_deref());
+    let result = encrypt_file_with_profile(
         Path::new(&source_path),
         &password,
         Path::new(&dest_dir),
+        Some(kdf_profile),
         |percent, bytes_processed, total_bytes| {
             let payload = ProgressPayload {
                 percent,

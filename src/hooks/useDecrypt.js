@@ -144,9 +144,15 @@ export function useDecrypt() {
         const u3 = await listen('progress', handleProgress);
         unlistenRefs.current = [u1, u2, u3];
 
+        const destDir = outputPath 
+          ? outputPath.replace(/[/\\][^/\\]+$/, '') 
+          : inputPath.replace(/[/\\][^/\\]+$/, '');
+
         const response = await invoke('cmd_decrypt', {
-          inputPath,
-          outputPath,
+          sourcePath: inputPath,
+          source_path: inputPath,
+          destDir: destDir || '.',
+          dest_dir: destDir || '.',
           password,
         });
 
@@ -158,11 +164,12 @@ export function useDecrypt() {
         }
 
         const durationMs = Date.now() - (startTimeRef.current || Date.now());
+        const finalPath = typeof response === 'string' ? response : (response?.outputPath || outputPath);
         const restoredName = (response && response.originalName) || 
-          (response && response.outputPath ? getFilenameFromPath(response.outputPath) : getFilenameFromPath(outputPath));
+          (finalPath ? getFilenameFromPath(finalPath) : 'restored_file');
 
         const outputResult = {
-          outputPath: (response && response.outputPath) || outputPath,
+          outputPath: finalPath,
           originalName: restoredName,
           bytesDecrypted: fileSize,
           durationMs,
