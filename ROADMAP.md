@@ -46,13 +46,13 @@ This roadmap outlines the planned development milestones for the Secure File Enc
 
 - [ ] **Batch Processing:** Multi-file drag-and-drop encryption and decryption queue.
 - [ ] **Folder Archival & Encryption:** Tar/zip streaming integration to encrypt entire directory structures into a single `.sfel` container.
-- [ ] **Real-time Password Entropy Meter:** zxcvbn-based password strength estimator with actionable advice against weak passwords.
-- [ ] **Operation History & Verification Log:** Local in-memory or encrypted SQLite history of recent operations (paths, timestamps, status).
-- [ ] **Configurable Argon2id Profiles:**
+- [x] **Real-time Password Entropy Meter:** Shannon/NIST pool entropy estimator with bits display and offline crack time estimation.
+- [x] **Operation History & Verification Log:** Local in-memory and persistent storage of recent operations (paths, timestamps, status).
+- [x] **Configurable Argon2id Profiles:**
   - *Fast / Low-Resource:* $m=32\text{ MiB}, t=2, p=2$ (for resource-constrained environments).
   - *Standard:* $m=64\text{ MiB}, t=3, p=4$ (recommended default).
   - *Paranoid / High-Security:* $m=256\text{ MiB}, t=5, p=8$ (for high-value data on capable hardware).
-- [ ] **Custom Output Destination:** Option to select a custom output directory or rename the decrypted file.
+- [x] **Custom Output Destination:** Option to select a custom output directory or rename the decrypted file.
 
 ---
 

@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Configurable Argon2id Profiles (v0.2.0):**
+  - Added `Argon2Profile` enum supporting `Fast` ($32\text{ MiB}, t=2, p=2$), `Standard` ($64\text{ MiB}, t=3, p=4$), and `Paranoid` ($256\text{ MiB}, t=5, p=8$).
+  - Integrated profile selection into `cmd_encrypt` and `encrypt_file_with_profile`.
+  - Added interactive visual profile selection cards in the React encryption flow (`Encrypt.jsx`).
+  - Documented active profiles and parameters in the Settings view.
+- **Shannon Entropy & Password Strength Meter (v0.2.0):**
+  - Added Shannon pool entropy calculation ($H = L \times \log_2(R)$) with pattern/repetition deductions.
+  - Added real-time entropy bit count display (`~X bits d'entropie`) and offline GPU brute-force crack time estimations.
+- **IPC Compatibility & Argument Normalization:**
+  - Standardized Tauri IPC parameter mapping (`sourcePath`, `destDir`, `password`, `profile`) across `useEncrypt` and `useDecrypt` hooks.
 - **Cryptographic Engine & Binary Format:**
   - Argon2id password-based key derivation ($m=64\text{ MiB}, t=3, p=4$) with secure zeroization via `zeroize`.
   - Authenticated encryption/decryption using AES-256-GCM with 96-bit nonces and 128-bit authentication tags.
