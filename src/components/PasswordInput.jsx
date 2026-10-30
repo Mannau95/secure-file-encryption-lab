@@ -1,6 +1,7 @@
 import React, { useState, useId } from 'react';
 import { validatePassword } from '../utils/validators';
 import { useI18n } from '../hooks/useI18n';
+import PasswordGenerator from './PasswordGenerator';
 import './PasswordInput.css';
 
 export function PasswordInput({
@@ -9,6 +10,7 @@ export function PasswordInput({
   confirmPassword = '',
   onConfirmChange = null,
   withConfirmation = false,
+  showGenerator = false,
   disabled = false,
   id = null,
   label = null,
@@ -25,6 +27,7 @@ export function PasswordInput({
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
 
   const evaluation = validatePassword(password);
   const passwordsMatch = !withConfirmation || (password.length > 0 && password === confirmPassword);
@@ -69,11 +72,23 @@ export function PasswordInput({
             {displayLabel}
             {required && <span className="required-star" aria-hidden="true">*</span>}
           </label>
-          {password.length > 0 && (
-            <span className={`strength-badge ${getStrengthClass(evaluation.score)}`}>
-              {strengthText}
-            </span>
-          )}
+          <div className="label-actions-group">
+            {password.length > 0 && (
+              <span className={`strength-badge ${getStrengthClass(evaluation.score)}`}>
+                {strengthText}
+              </span>
+            )}
+            {(showGenerator || withConfirmation) && !disabled && (
+              <button
+                type="button"
+                className="btn-open-generator"
+                onClick={() => setIsGeneratorOpen(true)}
+                title={t('generator.btnTitle')}
+              >
+                🎲 {t('generator.btnText')}
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="input-with-button">
@@ -236,6 +251,18 @@ export function PasswordInput({
           )}
         </div>
       )}
+
+      {/* High-Entropy Password Generator Modal */}
+      <PasswordGenerator
+        isOpen={isGeneratorOpen}
+        onClose={() => setIsGeneratorOpen(false)}
+        onApply={(generated) => {
+          onChange(generated);
+          if (onConfirmChange) {
+            onConfirmChange(generated);
+          }
+        }}
+      />
     </div>
   );
 }
