@@ -10,9 +10,11 @@ function isTauriEnvironment() {
 
 export function FileDropZone({
   onFileSelect,
+  onFilesSelect = null,
   selectedFile = null,
   onClear = null,
   accept = null, // e.g., ['.sfel'] or ['sfel']
+  multiple = false,
   label = null,
   description = null,
   disabled = false,
@@ -37,19 +39,29 @@ export function FileDropZone({
     setIsDragOver(false);
   };
 
-  const processFile = (fileObj) => {
-    if (!fileObj) return;
+  const processFiles = (fileList) => {
+    if (!fileList || fileList.length === 0) return;
 
-    if (accept && accept.length > 0) {
-      const ext = getFileExtension(fileObj.name || fileObj.path);
-      const cleanAccept = accept.map((a) => a.replace(/^\./, '').toLowerCase());
-      if (!cleanAccept.includes(ext.toLowerCase())) {
-        alert(`Please select a valid file ending with: ${accept.join(', ')}`);
-        return;
+    const validFiles = [];
+    for (const fileObj of fileList) {
+      if (accept && accept.length > 0) {
+        const ext = getFileExtension(fileObj.name || fileObj.path);
+        const cleanAccept = accept.map((a) => a.replace(/^\./, '').toLowerCase());
+        if (!cleanAccept.includes(ext.toLowerCase())) continue;
       }
+      validFiles.push(fileObj);
     }
 
-    onFileSelect(fileObj);
+    if (validFiles.length === 0 && fileList.length > 0) {
+      alert(`Please select valid files ending with: ${accept.join(', ')}`);
+      return;
+    }
+
+    if (multiple && onFilesSelect) {
+      onFilesSelect(validFiles);
+    } else if (onFileSelect && validFiles.length > 0) {
+      onFileSelect(validFiles[0]);
+    }
   };
 
   const handleDrop = (e) => {
@@ -58,16 +70,14 @@ export function FileDropZone({
     setIsDragOver(false);
     if (disabled) return;
 
-    const files = e.dataTransfer.files;
+    const files = Array.from(e.dataTransfer.files || []);
     if (files && files.length > 0) {
-      const file = files[0];
-      // HTML5 file object may have path property in electron/tauri
-      const filePath = file.path || file.name;
-      processFile({
-        path: filePath,
+      const mapped = files.map((file) => ({
+        path: file.path || file.name,
         name: file.name,
-        size: file.size,
-      });
+        size: file.size || 0,
+      }));
+      processFiles(mapped);
     }
   };
 
@@ -85,17 +95,28 @@ export function FileDropZone({
         }
 
         const selected = await open({
-          multiple: false,
+          multiple: Boolean(multiple),
           directory: false,
           filters: filters.length > 0 ? filters : undefined,
         });
 
-        if (selected && typeof selected === 'string') {
-          processFile({
-            path: selected,
-            name: getFilenameFromPath(selected),
-            size: 0, // In desktop app, size will be read by backend or stat
-          });
+        if (selected) {
+          if (Array.isArray(selected)) {
+            const mapped = selected.map((filePath) => ({
+              path: filePath,
+              name: getFilenameFromPath(filePath),
+              size: 0,
+            }));
+            processFiles(mapped);
+          } else if (typeof selected === 'string') {
+            processFiles([
+              {
+                path: selected,
+                name: getFilenameFromPath(selected),
+                size: 0,
+              },
+            ]);
+          }
         }
         return;
       } catch (err) {
@@ -110,13 +131,14 @@ export function FileDropZone({
   };
 
   const handleInputChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      processFile({
-        path: file.name, // In web fallback, path is name
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      const mapped = files.map((file) => ({
+        path: file.name,
         name: file.name,
         size: file.size,
-      });
+      }));
+      processFiles(mapped);
     }
   };
 
@@ -136,6 +158,7 @@ export function FileDropZone({
         className="sr-only"
         onChange={handleInputChange}
         disabled={disabled}
+        multiple={multiple}
         accept={accept ? accept.join(',') : undefined}
         tabIndex="-1"
       />
