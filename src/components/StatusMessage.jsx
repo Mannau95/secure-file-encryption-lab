@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useI18n } from '../hooks/useI18n';
 import './StatusMessage.css';
 
 export function StatusMessage({
@@ -10,6 +11,7 @@ export function StatusMessage({
   onDismiss = null,
   actionButton = null,
 }) {
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
 
   const handleCopyPath = async () => {
@@ -111,7 +113,7 @@ export function StatusMessage({
 
         {outputPath && (
           <div className="status-path-container">
-            <span className="path-label">Destination File:</span>
+            <span className="path-label">{t('common.filename')}:</span>
             <div className="path-box">
               <code className="path-code" title={outputPath}>
                 {outputPath}
@@ -120,11 +122,11 @@ export function StatusMessage({
                 type="button"
                 className="btn-copy-path"
                 onClick={handleCopyPath}
-                aria-label="Copy file path"
-                title="Copy to clipboard"
+                aria-label={t('common.copy')}
+                title={t('common.copy')}
               >
                 {copied ? (
-                  <span className="copied-text">Copied!</span>
+                  <span className="copied-text">{t('common.copied')}</span>
                 ) : (
                   <svg
                     className="copy-icon"
@@ -155,7 +157,7 @@ export function StatusMessage({
           type="button"
           className="status-dismiss-btn"
           onClick={onDismiss}
-          aria-label="Dismiss message"
+          aria-label={t('common.cancel')}
         >
           <svg
             viewBox="0 0 24 24"

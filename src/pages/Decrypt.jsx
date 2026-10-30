@@ -5,6 +5,7 @@ import PasswordInput from '../components/PasswordInput';
 import ProgressBar from '../components/ProgressBar';
 import StatusMessage from '../components/StatusMessage';
 import { useDecrypt } from '../hooks/useDecrypt';
+import { useI18n } from '../contexts/I18nContext';
 import { getFilenameFromPath } from '../utils/formatters';
 import { validateDestination } from '../utils/validators';
 import './Decrypt.css';
@@ -14,6 +15,7 @@ function isTauriEnvironment() {
 }
 
 export function Decrypt() {
+  const { t } = useI18n();
   const [selectedFile, setSelectedFile] = useState(null);
   const [password, setPassword] = useState('');
   const [destinationPath, setDestinationPath] = useState('');
@@ -128,11 +130,8 @@ export function Decrypt() {
     <div className="decrypt-page-container">
       {/* Page Title & Subtitle */}
       <div className="page-header-block">
-        <h2 className="flow-title">Decrypt a File</h2>
-        <p className="flow-subtitle">
-          Restore files from encrypted <code>.sfel</code> archives. The integrity of each chunk will be
-          cryptographically verified via Galois/Counter Mode authentication tags.
-        </p>
+        <h2 className="flow-title">{t('decrypt.pageTitle')}</h2>
+        <p className="flow-subtitle">{t('decrypt.pageSubtitle')}</p>
       </div>
 
       {/* Success State */}
@@ -140,8 +139,8 @@ export function Decrypt() {
         <div className="flow-outcome-container">
           <StatusMessage
             type="success"
-            title="File Decrypted and Verified"
-            message={`All chunks authenticated successfully. Original file ${result.originalName ? `"${result.originalName}"` : ''} has been safely restored.`}
+            title={t('decrypt.successTitle')}
+            message={t('decrypt.successMsg')}
             outputPath={result.outputPath}
             actionButton={
               <button
@@ -149,7 +148,7 @@ export function Decrypt() {
                 className="btn btn-primary"
                 onClick={handleResetFlow}
               >
-                Decrypt Another File
+                {t('decrypt.decryptAnother')}
               </button>
             }
           />
@@ -161,7 +160,7 @@ export function Decrypt() {
         <div className="flow-outcome-container">
           <StatusMessage
             type="error"
-            title="Decryption Failed"
+            title={t('decrypt.errorTitle')}
             message={error}
             actionButton={
               <button
@@ -169,7 +168,7 @@ export function Decrypt() {
                 className="btn btn-secondary"
                 onClick={() => reset()}
               >
-                Try Again
+                {t('common.tryAgain')}
               </button>
             }
           />
@@ -199,8 +198,8 @@ export function Decrypt() {
             <div className="step-header">
               <span className="step-number" aria-hidden="true">1</span>
               <div>
-                <h3 className="step-heading">Select Encrypted File</h3>
-                <p className="step-desc">Select a valid .sfel file created with SFEL.</p>
+                <h3 className="step-heading">{t('decrypt.step1Title')}</h3>
+                <p className="step-desc">{t('decrypt.step1Desc')}</p>
               </div>
             </div>
 
@@ -233,10 +232,8 @@ export function Decrypt() {
             <div className="step-header">
               <span className="step-number" aria-hidden="true">2</span>
               <div>
-                <h3 className="step-heading">Enter Decryption Password</h3>
-                <p className="step-desc">
-                  Enter the password used when the file was encrypted.
-                </p>
+                <h3 className="step-heading">{t('decrypt.step2Title')}</h3>
+                <p className="step-desc">{t('decrypt.step2Desc')}</p>
               </div>
             </div>
 
@@ -248,7 +245,7 @@ export function Decrypt() {
                   setClientErrors((prev) => ({ ...prev, password: null }));
                 }}
                 withConfirmation={false}
-                placeholder="Enter decryption password"
+                placeholder={t('password.placeholder')}
                 disabled={status === 'running'}
               />
               {clientErrors.password && (
@@ -264,8 +261,8 @@ export function Decrypt() {
             <div className="step-header">
               <span className="step-number" aria-hidden="true">3</span>
               <div>
-                <h3 className="step-heading">Output Destination</h3>
-                <p className="step-desc">Choose where the decrypted file will be saved.</p>
+                <h3 className="step-heading">{t('decrypt.step3Title')}</h3>
+                <p className="step-desc">{t('decrypt.step3Desc')}</p>
               </div>
             </div>
 
@@ -289,7 +286,7 @@ export function Decrypt() {
                   onClick={handleSelectDestination}
                   disabled={status === 'running' || !selectedFile}
                 >
-                  Choose Folder
+                  {t('common.browse')}
                 </button>
               </div>
               {clientErrors.destination && (
@@ -320,7 +317,7 @@ export function Decrypt() {
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                 <path d="M7 11V7a5 5 0 0 1 9.9-1" />
               </svg>
-              <span>Decrypt File</span>
+              <span>{t('decrypt.startBtn')}</span>
             </button>
           </div>
         </form>

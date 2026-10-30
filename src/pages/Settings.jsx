@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { useTheme } from '../hooks/useTheme';
 import { useOperation } from '../contexts/OperationContext';
+import { useI18n } from '../contexts/I18nContext';
 import './Settings.css';
 
 export function Settings() {
   const { theme, setTheme, reduceMotion, setReduceMotion } = useTheme();
   const { clearHistory, history } = useOperation();
+  const { t, language, setLanguage, supportedLanguages } = useI18n();
   const [clearedNotice, setClearedNotice] = useState(false);
 
   const handleClearHistory = () => {
-    if (window.confirm('Are you sure you want to clear all operation history records? This cannot be undone.')) {
+    if (window.confirm('Voulez-vous vraiment effacer tout l\'historique des opérations ? (Are you sure you want to clear history?)')) {
       clearHistory();
       setClearedNotice(true);
       setTimeout(() => setClearedNotice(false), 3000);
@@ -20,46 +22,64 @@ export function Settings() {
     <div className="settings-page-container">
       {/* Title */}
       <div className="page-header-block">
-        <h2 className="settings-title">Settings & Parameters</h2>
-        <p className="settings-subtitle">
-          Configure appearance, view cryptographic constants, and manage local storage.
-        </p>
+        <h2 className="settings-title">{t('settings.title')}</h2>
+        <p className="settings-subtitle">{t('settings.subtitle')}</p>
       </div>
 
       <div className="settings-grid">
-        {/* Appearance Section */}
+        {/* Appearance & Accessibility Section */}
         <section className="settings-card" aria-labelledby="appearance-heading">
           <h3 id="appearance-heading" className="card-section-title">
-            Appearance & Accessibility
+            {t('settings.appearanceHeading')}
           </h3>
 
+          {/* Language Selector */}
           <div className="setting-row">
             <div className="setting-info">
-              <span className="setting-label">Theme Mode</span>
-              <span className="setting-description">
-                Select your preferred visual style or sync automatically with your system.
-              </span>
+              <span className="setting-label">{t('settings.languageLabel')}</span>
+              <span className="setting-description">{t('settings.languageDesc')}</span>
+            </div>
+            <div className="setting-control">
+              <select
+                className="setting-select"
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                aria-label={t('settings.languageLabel')}
+              >
+                {supportedLanguages.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.flag} {lang.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Theme Selector */}
+          <div className="setting-row">
+            <div className="setting-info">
+              <span className="setting-label">{t('settings.themeLabel')}</span>
+              <span className="setting-description">{t('settings.themeDesc')}</span>
             </div>
             <div className="setting-control">
               <select
                 className="setting-select"
                 value={theme}
                 onChange={(e) => setTheme(e.target.value)}
-                aria-label="Theme mode"
+                aria-label={t('settings.themeLabel')}
               >
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-                <option value="system">Follow System</option>
+                <option value="light">{t('settings.themeLight')}</option>
+                <option value="dark">{t('settings.themeDark')}</option>
+                <option value="system">{t('settings.themeSystem')}</option>
               </select>
             </div>
           </div>
 
+          {/* Reduce Motion */}
           <div className="setting-row">
             <div className="setting-info">
-              <span className="setting-label">Reduce Animations</span>
-              <span className="setting-description">
-                Minimize interface transitions, spinners, and motion effects.
-              </span>
+              <span className="setting-label">{t('settings.animationsLabel')}</span>
+              <span className="setting-description">{t('settings.animationsDesc')}</span>
             </div>
             <div className="setting-control">
               <label className="toggle-switch">
@@ -67,7 +87,7 @@ export function Settings() {
                   type="checkbox"
                   checked={reduceMotion}
                   onChange={(e) => setReduceMotion(e.target.checked)}
-                  aria-label="Reduce animations"
+                  aria-label={t('settings.animationsLabel')}
                 />
                 <span className="toggle-slider" />
               </label>
@@ -79,14 +99,12 @@ export function Settings() {
         <section className="settings-card" aria-labelledby="crypto-heading">
           <div className="card-header-with-badge">
             <h3 id="crypto-heading" className="card-section-title">
-              Cryptographic Parameters & Profiles
+              {t('settings.cryptoHeading')}
             </h3>
-            <span className="readonly-badge">RFC 9106 Standard</span>
+            <span className="readonly-badge">{t('settings.cryptoBadge')}</span>
           </div>
           <p className="crypto-params-intro">
-            SFEL employs hardened, standardized parameters designed to resist GPU clustering and ASIC
-            attacks. The active profile parameters (m_cost, t_cost, p_cost) are embedded into each container's
-            header to ensure 100% interoperable, tamper-proof decryption.
+            {t('settings.cryptoIntro')}
           </p>
 
           <div className="params-table">
@@ -128,19 +146,17 @@ export function Settings() {
         {/* Data & Privacy */}
         <section className="settings-card" aria-labelledby="privacy-heading">
           <h3 id="privacy-heading" className="card-section-title">
-            Data & Privacy
+            {t('settings.privacyHeading')}
           </h3>
           <p className="privacy-desc">
-            SFEL operates completely offline. No telemetry, passwords, cryptographic keys, or plaintext
-            data ever leaves this device.
+            {t('settings.privacyDesc')}
           </p>
 
           <div className="setting-row">
             <div className="setting-info">
-              <span className="setting-label">Operation History</span>
+              <span className="setting-label">{t('common.history')}</span>
               <span className="setting-description">
-                Currently tracking {history.length} metadata record{history.length !== 1 ? 's' : ''} (filenames,
-                timestamps, and status).
+                {t('settings.historyTracking', { count: history.length })}
               </span>
             </div>
             <div className="setting-control">
@@ -150,14 +166,14 @@ export function Settings() {
                 onClick={handleClearHistory}
                 disabled={history.length === 0}
               >
-                Clear History
+                {t('settings.clearHistoryBtn')}
               </button>
             </div>
           </div>
 
           {clearedNotice && (
             <p className="cleared-alert" role="status">
-              History records have been cleared from local storage.
+              {t('history.clearedSuccess')}
             </p>
           )}
         </section>
@@ -165,24 +181,24 @@ export function Settings() {
         {/* About App */}
         <section className="settings-card" aria-labelledby="about-heading">
           <h3 id="about-heading" className="card-section-title">
-            About Secure File Encryption Lab
+            {t('settings.aboutHeading')}
           </h3>
 
           <div className="about-details">
             <div className="about-row">
-              <span className="about-label">Application Version</span>
-              <span className="about-val">v0.1.0</span>
+              <span className="about-label">{t('settings.appVersion')}</span>
+              <span className="about-val">v0.2.0</span>
             </div>
             <div className="about-row">
-              <span className="about-label">Container Format</span>
+              <span className="about-label">{t('settings.containerFormat')}</span>
               <span className="about-val">SFEL Binary Format v1</span>
             </div>
             <div className="about-row">
-              <span className="about-label">Desktop Engine</span>
+              <span className="about-label">{t('settings.desktopEngine')}</span>
               <span className="about-val">Tauri 2 (Rust backend + React UI)</span>
             </div>
             <div className="about-row">
-              <span className="about-label">License</span>
+              <span className="about-label">{t('settings.license')}</span>
               <span className="about-val">MIT / Apache-2.0</span>
             </div>
           </div>

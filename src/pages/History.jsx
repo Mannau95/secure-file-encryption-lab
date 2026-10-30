@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useOperation } from '../contexts/OperationContext';
+import { useI18n } from '../contexts/I18nContext';
 import { formatBytes, formatDate, truncatePath } from '../utils/formatters';
 import './History.css';
 
 export function History() {
   const { history, clearHistory, removeHistoryEntry } = useOperation();
+  const { t } = useI18n();
   const [filterType, setFilterType] = useState('all'); // 'all' | 'encrypt' | 'decrypt'
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -21,7 +23,7 @@ export function History() {
   }, [history, filterType, searchQuery]);
 
   const handleClearAll = () => {
-    if (window.confirm('Are you sure you want to clear your local history log?')) {
+    if (window.confirm('Voulez-vous vraiment effacer l\'historique ? (Clear history?)')) {
       clearHistory();
     }
   };
@@ -31,10 +33,8 @@ export function History() {
       {/* Page Title */}
       <div className="history-header-row">
         <div>
-          <h2 className="history-title">Operation History</h2>
-          <p className="history-subtitle">
-            Local log of cryptographic operations. Passwords and decrypted contents are never recorded.
-          </p>
+          <h2 className="history-title">{t('history.title')}</h2>
+          <p className="history-subtitle">{t('history.subtitle')}</p>
         </div>
 
         {history.length > 0 && (
@@ -43,7 +43,7 @@ export function History() {
             className="btn btn-secondary clear-btn"
             onClick={handleClearAll}
           >
-            Clear History
+            {t('history.clearHistory')}
           </button>
         )}
       </div>
@@ -69,10 +69,10 @@ export function History() {
               <input
                 type="text"
                 className="search-input"
-                placeholder="Search by file name or path..."
+                placeholder={t('history.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                aria-label="Search history"
+                aria-label={t('history.searchPlaceholder')}
               />
             </div>
 
@@ -84,7 +84,7 @@ export function History() {
                 className={`filter-tab ${filterType === 'all' ? 'active' : ''}`}
                 onClick={() => setFilterType('all')}
               >
-                All ({history.length})
+                {t('history.filterAll')} ({history.length})
               </button>
               <button
                 type="button"
@@ -93,7 +93,7 @@ export function History() {
                 className={`filter-tab ${filterType === 'encrypt' ? 'active' : ''}`}
                 onClick={() => setFilterType('encrypt')}
               >
-                Encrypted ({history.filter((h) => h.operationType === 'encrypt').length})
+                {t('history.filterEncrypt')} ({history.filter((h) => h.operationType === 'encrypt').length})
               </button>
               <button
                 type="button"
@@ -102,7 +102,7 @@ export function History() {
                 className={`filter-tab ${filterType === 'decrypt' ? 'active' : ''}`}
                 onClick={() => setFilterType('decrypt')}
               >
-                Decrypted ({history.filter((h) => h.operationType === 'decrypt').length})
+                {t('history.filterDecrypt')} ({history.filter((h) => h.operationType === 'decrypt').length})
               </button>
             </div>
           </div>
@@ -113,12 +113,12 @@ export function History() {
               <table className="history-table">
                 <thead>
                   <tr>
-                    <th scope="col">Type</th>
-                    <th scope="col">File Name</th>
-                    <th scope="col">Size</th>
-                    <th scope="col">Timestamp</th>
-                    <th scope="col">Status</th>
-                    <th scope="col" className="text-right">Action</th>
+                    <th scope="col">{t('history.tableOperation')}</th>
+                    <th scope="col">{t('history.tableFile')}</th>
+                    <th scope="col">{t('history.tableSize')}</th>
+                    <th scope="col">{t('history.tableDate')}</th>
+                    <th scope="col">{t('history.tableStatus')}</th>
+                    <th scope="col" className="text-right">{t('common.actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -126,7 +126,7 @@ export function History() {
                     <tr key={item.id} className="history-row">
                       <td>
                         <span className={`op-badge ${item.operationType}`}>
-                          {item.operationType === 'encrypt' ? 'Encrypt' : 'Decrypt'}
+                          {item.operationType === 'encrypt' ? t('common.encrypt') : t('common.decrypt')}
                         </span>
                       </td>
 
@@ -153,7 +153,7 @@ export function History() {
 
                       <td>
                         <span className={`status-pill ${item.status}`}>
-                          {item.status === 'success' ? 'Completed' : 'Failed'}
+                          {item.status === 'success' ? t('common.completed') : t('common.failed')}
                         </span>
                       </td>
 
@@ -162,7 +162,7 @@ export function History() {
                           type="button"
                           className="delete-row-btn"
                           onClick={() => removeHistoryEntry(item.id)}
-                          title="Remove from history"
+                          title="Supprimer / Delete"
                           aria-label={`Remove ${item.filename} from history`}
                         >
                           <svg

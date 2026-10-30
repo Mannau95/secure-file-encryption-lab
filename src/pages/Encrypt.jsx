@@ -5,6 +5,7 @@ import PasswordInput from '../components/PasswordInput';
 import ProgressBar from '../components/ProgressBar';
 import StatusMessage from '../components/StatusMessage';
 import { useEncrypt } from '../hooks/useEncrypt';
+import { useI18n } from '../contexts/I18nContext';
 import { getFilenameFromPath, truncatePath } from '../utils/formatters';
 import { validatePassword, validateDestination } from '../utils/validators';
 import './Encrypt.css';
@@ -14,6 +15,7 @@ function isTauriEnvironment() {
 }
 
 export function Encrypt() {
+  const { t } = useI18n();
   const [selectedFile, setSelectedFile] = useState(null);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -130,11 +132,8 @@ export function Encrypt() {
     <div className="encrypt-page-container">
       {/* Page Title & Subtitle */}
       <div className="page-header-block">
-        <h2 className="flow-title">Encrypt a File</h2>
-        <p className="flow-subtitle">
-          Securely encode your file into an authenticated <code>.sfel</code> vault using AES-256-GCM
-          with Argon2id key derivation.
-        </p>
+        <h2 className="flow-title">{t('encrypt.pageTitle')}</h2>
+        <p className="flow-subtitle">{t('encrypt.pageSubtitle')}</p>
       </div>
 
       {/* Success State */}
@@ -142,8 +141,8 @@ export function Encrypt() {
         <div className="flow-outcome-container">
           <StatusMessage
             type="success"
-            title="File Encrypted Successfully"
-            message="Your data has been encrypted and authenticated. Keep your password safe—without it, the file cannot be decrypted."
+            title={t('encrypt.successTitle')}
+            message={t('encrypt.successMsg')}
             outputPath={result.outputPath}
             actionButton={
               <button
@@ -151,7 +150,7 @@ export function Encrypt() {
                 className="btn btn-primary"
                 onClick={handleResetFlow}
               >
-                Encrypt Another File
+                {t('encrypt.encryptAnother')}
               </button>
             }
           />
@@ -163,7 +162,7 @@ export function Encrypt() {
         <div className="flow-outcome-container">
           <StatusMessage
             type="error"
-            title="Encryption Failed"
+            title={t('encrypt.errorTitle')}
             message={error}
             actionButton={
               <button
@@ -171,7 +170,7 @@ export function Encrypt() {
                 className="btn btn-secondary"
                 onClick={() => reset()}
               >
-                Try Again
+                {t('common.tryAgain')}
               </button>
             }
           />
@@ -200,8 +199,8 @@ export function Encrypt() {
             <div className="step-header">
               <span className="step-number" aria-hidden="true">1</span>
               <div>
-                <h3 className="step-heading">Select Source File</h3>
-                <p className="step-desc">Select any document, image, video, or archive to encrypt.</p>
+                <h3 className="step-heading">{t('encrypt.step1Title')}</h3>
+                <p className="step-desc">{t('encrypt.step1Desc')}</p>
               </div>
             </div>
 
@@ -231,10 +230,8 @@ export function Encrypt() {
             <div className="step-header">
               <span className="step-number" aria-hidden="true">2</span>
               <div>
-                <h3 className="step-heading">Set Master Password</h3>
-                <p className="step-desc">
-                  Choose a memorable, high-entropy password. SFEL cannot recover lost passwords.
-                </p>
+                <h3 className="step-heading">{t('encrypt.step2Title')}</h3>
+                <p className="step-desc">{t('encrypt.step2Desc')}</p>
               </div>
             </div>
 
@@ -271,8 +268,8 @@ export function Encrypt() {
             <div className="step-header">
               <span className="step-number" aria-hidden="true">3</span>
               <div>
-                <h3 className="step-heading">Cryptographic Strength Profile</h3>
-                <p className="step-desc">Configure Argon2id memory hardness and computational work factor.</p>
+                <h3 className="step-heading">{t('encrypt.step3Title')}</h3>
+                <p className="step-desc">{t('encrypt.step3Desc')}</p>
               </div>
             </div>
 
@@ -287,10 +284,10 @@ export function Encrypt() {
                     onChange={() => setProfile('fast')}
                     className="profile-radio"
                   />
-                  <div className="profile-badge">⚡ Fast</div>
-                  <div className="profile-title">Low Resource</div>
-                  <div className="profile-spec">32 MiB RAM • 2 iterations</div>
-                  <p className="profile-desc">Quick processing for large media or less sensitive documents.</p>
+                  <div className="profile-badge">{t('encrypt.profiles.fastBadge')}</div>
+                  <div className="profile-title">{t('encrypt.profiles.fastTitle')}</div>
+                  <div className="profile-spec">{t('encrypt.profiles.fastSpec')}</div>
+                  <p className="profile-desc">{t('encrypt.profiles.fastDesc')}</p>
                 </label>
 
                 <label className={`profile-card ${profile === 'standard' ? 'selected' : ''}`}>
@@ -302,10 +299,10 @@ export function Encrypt() {
                     onChange={() => setProfile('standard')}
                     className="profile-radio"
                   />
-                  <div className="profile-badge recommended">🛡️ Recommended</div>
-                  <div className="profile-title">Standard RFC 9106</div>
-                  <div className="profile-spec">64 MiB RAM • 3 iterations</div>
-                  <p className="profile-desc">Optimal trade-off: strong GPU resistance with ~1 sec latency.</p>
+                  <div className="profile-badge recommended">{t('encrypt.profiles.standardBadge')}</div>
+                  <div className="profile-title">{t('encrypt.profiles.standardTitle')}</div>
+                  <div className="profile-spec">{t('encrypt.profiles.standardSpec')}</div>
+                  <p className="profile-desc">{t('encrypt.profiles.standardDesc')}</p>
                 </label>
 
                 <label className={`profile-card ${profile === 'paranoid' ? 'selected' : ''}`}>
@@ -317,10 +314,10 @@ export function Encrypt() {
                     onChange={() => setProfile('paranoid')}
                     className="profile-radio"
                   />
-                  <div className="profile-badge paranoid">🔒 Paranoid</div>
-                  <div className="profile-title">High Security</div>
-                  <div className="profile-spec">256 MiB RAM • 5 iterations</div>
-                  <p className="profile-desc">Thwarts supercomputer ASIC farms for highly sensitive data.</p>
+                  <div className="profile-badge paranoid">{t('encrypt.profiles.paranoidBadge')}</div>
+                  <div className="profile-title">{t('encrypt.profiles.paranoidTitle')}</div>
+                  <div className="profile-spec">{t('encrypt.profiles.paranoidSpec')}</div>
+                  <p className="profile-desc">{t('encrypt.profiles.paranoidDesc')}</p>
                 </label>
               </div>
             </div>
@@ -331,8 +328,8 @@ export function Encrypt() {
             <div className="step-header">
               <span className="step-number" aria-hidden="true">4</span>
               <div>
-                <h3 className="step-heading">Output Destination</h3>
-                <p className="step-desc">Choose where the encrypted file will be created.</p>
+                <h3 className="step-heading">{t('encrypt.step4Title')}</h3>
+                <p className="step-desc">{t('encrypt.step4Desc')}</p>
               </div>
             </div>
 
@@ -356,7 +353,7 @@ export function Encrypt() {
                   onClick={handleSelectDestination}
                   disabled={status === 'running' || !selectedFile}
                 >
-                  Browse Destination
+                  {t('common.browseDestination')}
                 </button>
               </div>
               {clientErrors.destination && (
@@ -387,7 +384,7 @@ export function Encrypt() {
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
-              <span>Encrypt File</span>
+              <span>{t('encrypt.startBtn')}</span>
             </button>
           </div>
         </form>

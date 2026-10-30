@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { useI18n } from '../hooks/useI18n';
 import './Education.css';
 
-const EDUCATION_TOPICS = [
+const EDUCATION_TOPICS_EN = [
   {
     id: 'encryption',
     title: 'What is Encryption? (AES-256-GCM)',
@@ -173,8 +174,183 @@ const EDUCATION_TOPICS = [
   },
 ];
 
+const EDUCATION_TOPICS_FR = [
+  {
+    id: 'encryption',
+    title: 'Qu\'est-ce que le chiffrement ? (AES-256-GCM)',
+    summary: 'Transformer des données lisibles en un texte chiffré indéchiffrable sans la clé secrète.',
+    content: (
+      <>
+        <p>
+          Le chiffrement est la transformation mathématique d'une information intelligible (texte en clair) en un
+          format inintelligible (texte chiffré). Seules les personnes autorisées possédant la clé
+          cryptographique correspondante peuvent inverser cette opération.
+        </p>
+        <p>
+          SFEL utilise <strong>AES-256-GCM</strong> (Advanced Encryption Standard avec clés de 256 bits en
+          mode Galois/Counter Mode). AES est un standard mondial validé par le NIST et éprouvé par les banques
+          et gouvernements les plus exigeants.
+        </p>
+        <div className="edu-callout">
+          <strong>Pourquoi AES-256 ?</strong> Une clé de 256 bits compte 2<sup>256</sup> combinaisons possibles — un
+          nombre supérieur à la totalité des atomes dans l'univers observable. Casser cette clé par force brute
+          prendrait des milliards d'années à l'ensemble des superordinateurs terrestres réunis.
+        </div>
+      </>
+    ),
+  },
+  {
+    id: 'kdf',
+    title: 'Qu\'est-ce que la dérivation de clé ? (Argon2id)',
+    summary: 'Convertir une phrase de passe humaine en une clé uniforme et mathématiquement rigide de 256 bits.',
+    content: (
+      <>
+        <p>
+          Les humains choisissent des mots de passe comme <code>"Soleil-Montagne-2026!"</code>. Cependant, AES exige
+          une séquence brute et uniforme de 32 octets parfaitement aléatoires (256 bits). On ne peut pas simplement
+          compléter ou tronquer un mot de passe.
+        </p>
+        <p>
+          Une <strong>Fonction de Dérivation de Clé (KDF)</strong> étire un mot de passe en une clé inviolable. SFEL
+          utilise <strong>Argon2id</strong>, vainqueur de la Password Hashing Competition mondiale (standard RFC 9106).
+        </p>
+        <div className="diagram-box">
+          <div className="diagram-step">Mot de passe utilisateur</div>
+          <div className="diagram-arrow">+</div>
+          <div className="diagram-step">Sel aléatoire de 16 octets</div>
+          <div className="diagram-arrow">&rarr;</div>
+          <div className="diagram-step highlight">Argon2id (64 Mo RAM, 3 itérations)</div>
+          <div className="diagram-arrow">&rarr;</div>
+          <div className="diagram-step">Clé Maître 256-Bit</div>
+        </div>
+        <p>
+          Argon2id est dit <em>à mémoire dure</em> (memory-hard) : il requiert 64 mégaoctets de RAM dédiée par essai.
+          Cela neutralise les attaques parallèles massives menées sur des cartes graphiques (GPU) ou puces ASIC,
+          rendant le piratage par dictionnaire économiquement ruineux.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: 'salt',
+    title: 'Qu\'est-ce qu\'un Sel (Salt) ? Pourquoi est-il vital ?',
+    summary: 'Une valeur aléatoire unique générée par fichier pour neutraliser les tables arc-en-ciel et le précalcul.',
+    content: (
+      <>
+        <p>
+          Si deux personnes emploient le même mot de passe <code>"motdepasse123"</code>, sans sel, elles produiraient
+          exactement la même clé cryptographique. Un attaquant pourrait précalculer des milliards de mots de passe
+          courants dans une table (« table arc-en-ciel ») et déchiffrer tout le monde d'un seul coup.
+        </p>
+        <p>
+          Un <strong>sel</strong> est un nombre aléatoire de 128 bits généré de manière unique pour chaque fichier
+          chiffré à l'aide du générateur cryptographique du système d'exploitation.
+        </p>
+        <div className="edu-callout">
+          <strong>La garantie du Sel :</strong> Même en chiffrant 100 fois le même fichier avec le même mot de passe,
+          chaque fichier reçoit un sel différent, générant 100 clés dérivées et 100 textes chiffrés totalement
+          distincts. Le sel figure dans l'en-tête du fichier : il est public et ne nécessite aucun secret.
+        </div>
+      </>
+    ),
+  },
+  {
+    id: 'nonce',
+    title: 'Qu\'est-ce qu\'un Nonce ? Pourquoi ne doit-il JAMAIS se répéter ?',
+    summary: 'Un « nombre à usage unique » garantissant qu\'aucun bloc de données n\'est chiffré dans le même état.',
+    content: (
+      <>
+        <p>
+          En mode AES-GCM, le chiffrement se comporte comme un chiffrement par flux : il chiffre un compteur avec la
+          clé pour produire un masque jetable (keystream), qui est combiné par un opérateur XOR avec les données.
+        </p>
+        <p>
+          Un <strong>nonce</strong> (Number used ONCE) est une valeur de 96 bits qui initialise ce compteur.
+        </p>
+        <div className="edu-callout warning-callout">
+          <strong>La catastrophe du Nonce :</strong> En mode Galois/Counter, si le même couple (clé, nonce) est
+          réutilisé pour chiffrer deux blocs distincts, un attaquant peut effectuer un XOR entre les deux textes chiffrés
+          pour éliminer le masque, exposant la structure des données et permettant même de recalculer la clé
+          d'authentification !
+        </div>
+        <p>
+          SFEL gère les nonces avec rigueur : un nonce aléatoire de base de 96 bits est généré par fichier, puis chaque
+          bloc de 64 Kio incrémente ce compteur de manière strictement déterministe. Le risque de collision est nul.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: 'authentication',
+    title: 'Qu\'est-ce que l\'Authentification ? (Balises GCM & Intégrité)',
+    summary: 'La preuve mathématique qu\'un fichier chiffré n\'a été ni altéré, ni corrompu, ni tronqué.',
+    content: (
+      <>
+        <p>
+          Le chiffrement simple ne garantit que la <em>confidentialité</em> (un espion ne peut pas lire le contenu).
+          Il ne garantit aucunement l'<em>intégrité</em>. Les modes historiques (comme le mode CBC classique) permettaient
+          à un attaquant de modifier des bits du texte chiffré pour modifier de manière prévisible le document en clair
+          sans déclencher d'erreur.
+        </p>
+        <p>
+          AES-GCM est un algorithme de type <strong>AEAD (Authenticated Encryption with Associated Data)</strong>. En
+          plus du texte chiffré, il produit une balise d'authentification de 128 bits (MAC).
+        </p>
+        <div className="diagram-box">
+          <div className="diagram-step">Bloc en clair</div>
+          <div className="diagram-arrow">&rarr; AES-GCM &rarr;</div>
+          <div className="diagram-step">Bloc chiffré</div>
+          <div className="diagram-arrow">+</div>
+          <div className="diagram-step highlight">Balise d'authentification 128 bits</div>
+        </div>
+        <p>
+          Lors du déchiffrement, si le moindre bit du fichier a été altéré par un disque défaillant ou modifié par un
+          adversaire, la vérification mathématique échoue immédiatement. SFEL stoppe le traitement et n'écrit jamais de
+          données altérées sur votre disque.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: 'limitations',
+    title: 'Modèle de menaces & Ce contre quoi SFEL ne peut PAS protéger',
+    summary: 'Comprendre les frontières opérationnelles et les limites physiques du chiffrement applicatif.',
+    content: (
+      <>
+        <p>
+          Une sécurité honnête et responsable exige de reconnaître ses frontières. SFEL offre une protection
+          mathématique de premier ordre pour vos fichiers au repos, mais ne peut défier les lois des systèmes informatiques.
+        </p>
+        <ul className="limitations-list">
+          <li>
+            <strong>Poste de travail compromis (Malwares / Keyloggers) :</strong> Si votre machine est infectée par un
+            logiciel espion, un pirate peut intercepter votre phrase de passe lors de sa frappe ou copier le fichier clair
+            lorsqu'il est ouvert.
+          </li>
+          <li>
+            <strong>Oubli du mot de passe :</strong> Il n'existe aucune porte dérobée, aucune clé universelle et aucun
+            recours de réinitialisation. En cas de perte de votre mot de passe, vos données sont définitivement perdues.
+          </li>
+          <li>
+            <strong>Suppression de fichiers / Rançongiciels :</strong> Le chiffrement interdit la lecture non autorisée,
+            mais n'empêche pas un utilisateur hostile ou un ransomware de supprimer le fichier <code>.sfel</code> de
+            votre disque. Conservez toujours des sauvegardes déconnectées.
+          </li>
+          <li>
+            <strong>Fuite de métadonnées :</strong> Bien que le contenu soit chiffré, la taille approximative du fichier
+            (longueur du conteneur) demeure observable par quiconque a accès au système de fichiers.
+          </li>
+        </ul>
+      </>
+    ),
+  },
+];
+
 export function Education() {
+  const { language, t } = useI18n();
   const [openSectionId, setOpenSectionId] = useState('encryption');
+
+  const topics = language === 'fr' ? EDUCATION_TOPICS_FR : EDUCATION_TOPICS_EN;
 
   const toggleSection = (id) => {
     setOpenSectionId((prev) => (prev === id ? null : id));
@@ -184,16 +360,13 @@ export function Education() {
     <div className="education-page-container">
       {/* Header */}
       <div className="page-header-block">
-        <h2 className="edu-page-title">Cryptographic Education</h2>
-        <p className="edu-page-subtitle">
-          Understanding the mathematical principles, standards, and security assumptions underpinning the
-          Secure File Encryption Lab.
-        </p>
+        <h2 className="edu-page-title">{t('education.title')}</h2>
+        <p className="edu-page-subtitle">{t('education.subtitle')}</p>
       </div>
 
       {/* Accordion list */}
       <div className="accordion-container" role="tablist">
-        {EDUCATION_TOPICS.map((topic) => {
+        {topics.map((topic) => {
           const isOpen = openSectionId === topic.id;
           const panelId = `panel-${topic.id}`;
           const buttonId = `button-${topic.id}`;

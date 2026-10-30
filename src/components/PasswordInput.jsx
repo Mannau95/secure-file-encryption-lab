@@ -1,5 +1,6 @@
 import React, { useState, useId } from 'react';
 import { validatePassword } from '../utils/validators';
+import { useI18n } from '../hooks/useI18n';
 import './PasswordInput.css';
 
 export function PasswordInput({
@@ -10,13 +11,17 @@ export function PasswordInput({
   withConfirmation = false,
   disabled = false,
   id = null,
-  label = 'Password',
-  placeholder = 'Enter encryption password',
+  label = null,
+  placeholder = null,
   required = true,
 }) {
+  const { t } = useI18n();
   const generatedId = useId();
   const inputId = id || generatedId;
   const confirmId = `${inputId}-confirm`;
+
+  const displayLabel = label || t('password.label');
+  const displayPlaceholder = placeholder || t('password.placeholder');
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -24,6 +29,20 @@ export function PasswordInput({
   const evaluation = validatePassword(password);
   const passwordsMatch = !withConfirmation || (password.length > 0 && password === confirmPassword);
   const showMismatch = withConfirmation && confirmPassword.length > 0 && password !== confirmPassword;
+
+  const strengthKeys = ['veryWeak', 'weak', 'fair', 'strong', 'veryStrong'];
+  const strengthText = t(`password.${strengthKeys[evaluation.score] || 'weak'}`);
+
+  const getCrackTimeText = () => {
+    const b = evaluation.entropyBits;
+    if (b < 28) return t('password.instant');
+    if (b < 36) return t('password.seconds');
+    if (b < 45) return t('password.hours');
+    if (b < 55) return t('password.months');
+    if (b < 65) return t('password.decades');
+    if (b < 80) return t('password.millions');
+    return t('password.centuries');
+  };
 
   const getStrengthClass = (score) => {
     switch (score) {
@@ -47,12 +66,12 @@ export function PasswordInput({
       <div className="form-field">
         <div className="label-row">
           <label htmlFor={inputId} className="input-label">
-            {label}
+            {displayLabel}
             {required && <span className="required-star" aria-hidden="true">*</span>}
           </label>
           {password.length > 0 && (
             <span className={`strength-badge ${getStrengthClass(evaluation.score)}`}>
-              {evaluation.label}
+              {strengthText}
             </span>
           )}
         </div>
@@ -64,7 +83,7 @@ export function PasswordInput({
             value={password}
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}
-            placeholder={placeholder}
+            placeholder={displayPlaceholder}
             autoComplete="new-password"
             className="text-input"
             required={required}
@@ -75,8 +94,8 @@ export function PasswordInput({
             className="visibility-toggle-btn"
             onClick={() => setShowPassword(!showPassword)}
             disabled={disabled}
-            aria-label={showPassword ? 'Hide password' : 'Show password'}
-            title={showPassword ? 'Hide password' : 'Show password'}
+            aria-label={showPassword ? t('password.hide') : t('password.show')}
+            title={showPassword ? t('password.hide') : t('password.show')}
           >
             {showPassword ? (
               <svg
@@ -121,10 +140,10 @@ export function PasswordInput({
             </div>
             <div className="entropy-stats-row">
               <span className="entropy-stat-tag">
-                🔒 ~<strong>{evaluation.entropyBits} bits</strong> d'entropie
+                🔒 ~<strong>{evaluation.entropyBits} {t('password.entropyBits')}</strong>
               </span>
               <span className="entropy-stat-tag crack-time">
-                ⏱️ Brute-force : <strong>{evaluation.crackTime}</strong>
+                ⏱️ {t('password.bruteForceTime')} : <strong>{getCrackTimeText()}</strong>
               </span>
             </div>
           </>
@@ -132,7 +151,7 @@ export function PasswordInput({
 
         <div id={`${inputId}-help`} className="field-hint">
           {password.length === 0 ? (
-            <span>Use a strong password. It will be derived via Argon2id (64 MiB, 3 passes).</span>
+            <span>{t('password.placeholder')}</span>
           ) : (
             <span>{evaluation.feedback.join(' • ')}</span>
           )}
@@ -144,14 +163,14 @@ export function PasswordInput({
         <div className="form-field confirm-field">
           <div className="label-row">
             <label htmlFor={confirmId} className="input-label">
-              Confirm Password
+              {t('password.confirmLabel')}
               {required && <span className="required-star" aria-hidden="true">*</span>}
             </label>
             {confirmPassword.length > 0 && (
               <span
                 className={`match-indicator ${passwordsMatch ? 'match-ok' : 'match-error'}`}
               >
-                {passwordsMatch ? 'Passwords match' : 'Do not match'}
+                {passwordsMatch ? t('password.match') : t('password.mismatch')}
               </span>
             )}
           </div>
@@ -163,7 +182,7 @@ export function PasswordInput({
               value={confirmPassword}
               onChange={(e) => onConfirmChange(e.target.value)}
               disabled={disabled}
-              placeholder="Re-enter password to confirm"
+              placeholder={t('password.confirmPlaceholder')}
               autoComplete="new-password"
               className={`text-input ${showMismatch ? 'input-error' : ''}`}
               required={required}
@@ -175,8 +194,8 @@ export function PasswordInput({
               className="visibility-toggle-btn"
               onClick={() => setShowConfirm(!showConfirm)}
               disabled={disabled}
-              aria-label={showConfirm ? 'Hide confirm password' : 'Show confirm password'}
-              title={showConfirm ? 'Hide confirm password' : 'Show confirm password'}
+              aria-label={showConfirm ? t('password.hide') : t('password.show')}
+              title={showConfirm ? t('password.hide') : t('password.show')}
             >
               {showConfirm ? (
                 <svg
@@ -212,7 +231,7 @@ export function PasswordInput({
 
           {showMismatch && (
             <p id={`${confirmId}-error`} className="error-text" role="alert">
-              Passwords do not match. Please verify your password.
+              {t('password.mismatch')}
             </p>
           )}
         </div>

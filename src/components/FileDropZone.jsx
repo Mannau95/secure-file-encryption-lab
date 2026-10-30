@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { formatBytes, getFilenameFromPath, getFileExtension } from '../utils/formatters';
+import { useI18n } from '../hooks/useI18n';
 import './FileDropZone.css';
 
 function isTauriEnvironment() {
@@ -12,12 +13,16 @@ export function FileDropZone({
   selectedFile = null,
   onClear = null,
   accept = null, // e.g., ['.sfel'] or ['sfel']
-  label = 'Drop file here or click to browse',
-  description = 'Supports files of any size with low-memory chunked streaming',
+  label = null,
+  description = null,
   disabled = false,
 }) {
+  const { t } = useI18n();
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef(null);
+
+  const displayLabel = label || t('dropzone.dragPrompt');
+  const displayDescription = description || (accept ? `${t('dropzone.selected')} (${accept.join(', ')})` : 'AES-256-GCM / Argon2id streaming');
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -164,8 +169,8 @@ export function FileDropZone({
             </svg>
           </div>
           <div className="drop-content">
-            <p className="drop-title">{label}</p>
-            <p className="drop-desc">{description}</p>
+            <p className="drop-title">{displayLabel}</p>
+            <p className="drop-desc">{displayDescription}</p>
           </div>
           <button
             type="button"
@@ -176,7 +181,7 @@ export function FileDropZone({
               handleBrowse();
             }}
           >
-            Browse Files
+            {t('dropzone.browseBtn')}
           </button>
         </div>
       ) : (
@@ -216,8 +221,8 @@ export function FileDropZone({
               className="clear-file-btn"
               onClick={onClear}
               disabled={disabled}
-              aria-label="Remove selected file"
-              title="Remove file"
+              aria-label={t('dropzone.changeFile')}
+              title={t('dropzone.changeFile')}
             >
               <svg
                 viewBox="0 0 24 24"

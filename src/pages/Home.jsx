@@ -1,11 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useOperation } from '../contexts/OperationContext';
+import { useI18n } from '../contexts/I18nContext';
 import { formatDate } from '../utils/formatters';
 import './Home.css';
 
 export function Home() {
   const { history } = useOperation();
+  const { t } = useI18n();
   const recentOperations = history.slice(0, 3);
 
   return (
@@ -25,14 +27,11 @@ export function Home() {
           >
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
           </svg>
-          <span>Authenticated AES-256-GCM & Argon2id</span>
+          <span>{t('home.badge')}</span>
         </div>
 
-        <h2 className="hero-title">Secure File Encryption Lab</h2>
-        <p className="hero-description">
-          A desktop encryption suite engineered with zero-knowledge architecture. Protect sensitive
-          files with memory-hard key derivation and cryptographic integrity verification.
-        </p>
+        <h2 className="hero-title">{t('home.heroTitle')}</h2>
+        <p className="hero-description">{t('home.heroDesc')}</p>
       </section>
 
       {/* Main Action Cards */}
@@ -53,19 +52,18 @@ export function Home() {
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
             </div>
-            <span className="card-pill">Protect Data</span>
+            <span className="card-pill">{t('home.encryptCardPill')}</span>
           </div>
 
           <div className="card-content">
-            <h3 className="card-heading">Encrypt a File</h3>
+            <h3 className="card-heading">{t('home.encryptCardTitle')}</h3>
             <p className="card-text">
-              Transform any file into a tamper-proof <code>.sfel</code> vault. Generates unique 128-bit
-              salts and per-chunk nonces to prevent correlation attacks.
+              {t('home.encryptCardText')}
             </p>
           </div>
 
           <div className="card-footer">
-            <span className="card-action-text">Launch Encrypt Flow</span>
+            <span className="card-action-text">{t('home.encryptCardAction')}</span>
             <svg
               className="card-arrow"
               viewBox="0 0 24 24"
@@ -98,19 +96,18 @@ export function Home() {
                 <path d="M7 11V7a5 5 0 0 1 9.9-1" />
               </svg>
             </div>
-            <span className="card-pill">Restore Data</span>
+            <span className="card-pill">{t('home.decryptCardPill')}</span>
           </div>
 
           <div className="card-content">
-            <h3 className="card-heading">Decrypt a File</h3>
+            <h3 className="card-heading">{t('home.decryptCardTitle')}</h3>
             <p className="card-text">
-              Restore your original file from a <code>.sfel</code> container. Verifies Galois Counter Mode
-              authentication tags to guarantee zero bit-rot or tampering.
+              {t('home.decryptCardText')}
             </p>
           </div>
 
           <div className="card-footer">
-            <span className="card-action-text">Launch Decrypt Flow</span>
+            <span className="card-action-text">{t('home.decryptCardAction')}</span>
             <svg
               className="card-arrow"
               viewBox="0 0 24 24"
@@ -133,30 +130,24 @@ export function Home() {
         <div className="pillar-item">
           <div className="pillar-icon" aria-hidden="true">🛡️</div>
           <div className="pillar-info">
-            <h4 className="pillar-title">Authenticated Encryption</h4>
-            <p className="pillar-desc">
-              AES-256-GCM guarantees both confidentiality and ciphertext integrity simultaneously.
-            </p>
+            <h4 className="pillar-title">{t('home.pillars.aeadTitle')}</h4>
+            <p className="pillar-desc">{t('home.pillars.aeadDesc')}</p>
           </div>
         </div>
 
         <div className="pillar-item">
           <div className="pillar-icon" aria-hidden="true">⚡</div>
           <div className="pillar-info">
-            <h4 className="pillar-title">Argon2id Key Derivation</h4>
-            <p className="pillar-desc">
-              Configured with 64 MiB RAM and 3 iterations to thwart GPU, ASIC, and dictionary attacks.
-            </p>
+            <h4 className="pillar-title">{t('home.pillars.argonTitle')}</h4>
+            <p className="pillar-desc">{t('home.pillars.argonDesc')}</p>
           </div>
         </div>
 
         <div className="pillar-item">
           <div className="pillar-icon" aria-hidden="true">📦</div>
           <div className="pillar-info">
-            <h4 className="pillar-title">Chunked Streaming</h4>
-            <p className="pillar-desc">
-              Stream-processes files in 64 KiB chunks with low memory footprint, handling gigabytes smoothly.
-            </p>
+            <h4 className="pillar-title">{t('home.pillars.streamTitle')}</h4>
+            <p className="pillar-desc">{t('home.pillars.streamDesc')}</p>
           </div>
         </div>
       </section>
@@ -164,14 +155,11 @@ export function Home() {
       {/* Education Callout */}
       <section className="education-banner">
         <div className="edu-banner-content">
-          <h3 className="edu-banner-title">Want to understand the cryptography under the hood?</h3>
-          <p className="edu-banner-text">
-            Learn why random salts stop rainbow tables, why unique nonces prevent catastrophic key leakage,
-            and explore what client encryption protects against.
-          </p>
+          <h3 className="edu-banner-title">{t('home.eduBannerTitle')}</h3>
+          <p className="edu-banner-text">{t('home.eduBannerText')}</p>
         </div>
         <Link to="/education" className="btn btn-secondary edu-banner-btn">
-          Explore Crypto Education
+          {t('home.eduBannerBtn')}
         </Link>
       </section>
 
@@ -179,9 +167,9 @@ export function Home() {
       {recentOperations.length > 0 && (
         <section className="recent-section" aria-label="Recent Operations">
           <div className="recent-header">
-            <h3 className="recent-title">Recent Activity</h3>
+            <h3 className="recent-title">{t('home.recentTitle')}</h3>
             <Link to="/history" className="view-all-link">
-              View all history &rarr;
+              {t('home.viewAllHistory')}
             </Link>
           </div>
 
@@ -196,7 +184,7 @@ export function Home() {
                 </span>
                 <span className="recent-date">{formatDate(item.timestamp)}</span>
                 <span className={`recent-status ${item.status}`}>
-                  {item.status === 'success' ? 'Completed' : 'Failed'}
+                  {item.status === 'success' ? t('common.completed') : t('common.failed')}
                 </span>
               </div>
             ))}

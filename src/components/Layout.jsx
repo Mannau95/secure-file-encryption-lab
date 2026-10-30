@@ -1,29 +1,32 @@
 import React from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import ThemeToggle from './ThemeToggle';
+import LanguageToggle from './LanguageToggle';
 import { useOperation } from '../contexts/OperationContext';
+import { useI18n } from '../contexts/I18nContext';
 import './Layout.css';
 
 export function Layout() {
   const { activeOperation } = useOperation();
+  const { t } = useI18n();
   const location = useLocation();
 
   const getPageTitle = (pathname) => {
     switch (pathname) {
       case '/':
-        return 'Overview';
+        return t('nav.home');
       case '/encrypt':
-        return 'Encrypt File';
+        return t('nav.encrypt');
       case '/decrypt':
-        return 'Decrypt File';
+        return t('nav.decrypt');
       case '/education':
-        return 'Cryptographic Education';
+        return t('nav.education');
       case '/history':
-        return 'Operation History';
+        return t('nav.history');
       case '/settings':
-        return 'Settings & Architecture';
+        return t('nav.settings');
       default:
-        return 'Secure File Encryption Lab';
+        return t('common.appName');
     }
   };
 
@@ -77,7 +80,7 @@ export function Layout() {
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                   <polyline points="9 22 9 12 15 12 15 22" />
                 </svg>
-                <span className="nav-label">Home</span>
+                <span className="nav-label">{t('nav.home')}</span>
               </NavLink>
             </li>
 
@@ -99,7 +102,7 @@ export function Layout() {
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
-                <span className="nav-label">Encrypt</span>
+                <span className="nav-label">{t('nav.encrypt')}</span>
               </NavLink>
             </li>
 
@@ -121,7 +124,7 @@ export function Layout() {
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0 1 9.9-1" />
                 </svg>
-                <span className="nav-label">Decrypt</span>
+                <span className="nav-label">{t('nav.decrypt')}</span>
               </NavLink>
             </li>
 
@@ -145,7 +148,7 @@ export function Layout() {
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                   <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                 </svg>
-                <span className="nav-label">Education</span>
+                <span className="nav-label">{t('nav.education')}</span>
               </NavLink>
             </li>
 
@@ -167,7 +170,7 @@ export function Layout() {
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
-                <span className="nav-label">History</span>
+                <span className="nav-label">{t('nav.history')}</span>
               </NavLink>
             </li>
 
@@ -189,7 +192,7 @@ export function Layout() {
                   <circle cx="12" cy="12" r="3" />
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
                 </svg>
-                <span className="nav-label">Settings</span>
+                <span className="nav-label">{t('nav.settings')}</span>
               </NavLink>
             </li>
           </ul>
@@ -215,10 +218,11 @@ export function Layout() {
               <div className="active-op-pill" aria-live="polite">
                 <span className="op-spinner" />
                 <span>
-                  {activeOperation.type === 'encrypt' ? 'Encrypting...' : 'Decrypting...'}
+                  {activeOperation.type === 'encrypt' ? `${t('common.encrypt')}...` : `${t('common.decrypt')}...`}
                 </span>
               </div>
             )}
+            <LanguageToggle />
             <ThemeToggle />
           </div>
         </header>
