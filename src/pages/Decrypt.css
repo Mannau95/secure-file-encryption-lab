@@ -1,0 +1,26 @@
+.decrypt-page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.decrypt-page-container .flow-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.decrypt-page-container .flow-subtitle {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.decrypt-page-container .flow-subtitle code {
+  color: #0284c7;
+  background-color: rgba(14, 165, 233, 0.12);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--radius-xs);
+}

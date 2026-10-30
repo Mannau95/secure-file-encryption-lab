@@ -1,0 +1,229 @@
+import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { useOperation } from '../contexts/OperationContext';
+import { formatBytes, formatDate, truncatePath } from '../utils/formatters';
+import './History.css';
+
+export function History() {
+  const { history, clearHistory, removeHistoryEntry } = useOperation();
+  const [filterType, setFilterType] = useState('all'); // 'all' | 'encrypt' | 'decrypt'
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredHistory = useMemo(() => {
+    return history.filter((item) => {
+      const matchesType = filterType === 'all' || item.operationType === filterType;
+      const matchesSearch =
+        !searchQuery ||
+        (item.filename && item.filename.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (item.outputPath && item.outputPath.toLowerCase().includes(searchQuery.toLowerCase()));
+      return matchesType && matchesSearch;
+    });
+  }, [history, filterType, searchQuery]);
+
+  const handleClearAll = () => {
+    if (window.confirm('Are you sure you want to clear your local history log?')) {
+      clearHistory();
+    }
+  };
+
+  return (
+    <div className="history-page-container">
+      {/* Page Title */}
+      <div className="history-header-row">
+        <div>
+          <h2 className="history-title">Operation History</h2>
+          <p className="history-subtitle">
+            Local log of cryptographic operations. Passwords and decrypted contents are never recorded.
+          </p>
+        </div>
+
+        {history.length > 0 && (
+          <button
+            type="button"
+            className="btn btn-secondary clear-btn"
+            onClick={handleClearAll}
+          >
+            Clear History
+          </button>
+        )}
+      </div>
+
+      {history.length > 0 ? (
+        <div className="history-content-block">
+          {/* Controls: Search and Filter Tabs */}
+          <div className="history-controls">
+            <div className="search-wrap">
+              <svg
+                className="search-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search by file name or path..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Search history"
+              />
+            </div>
+
+            <div className="filter-tabs" role="tablist" aria-label="Filter operations">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={filterType === 'all'}
+                className={`filter-tab ${filterType === 'all' ? 'active' : ''}`}
+                onClick={() => setFilterType('all')}
+              >
+                All ({history.length})
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={filterType === 'encrypt'}
+                className={`filter-tab ${filterType === 'encrypt' ? 'active' : ''}`}
+                onClick={() => setFilterType('encrypt')}
+              >
+                Encrypted ({history.filter((h) => h.operationType === 'encrypt').length})
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={filterType === 'decrypt'}
+                className={`filter-tab ${filterType === 'decrypt' ? 'active' : ''}`}
+                onClick={() => setFilterType('decrypt')}
+              >
+                Decrypted ({history.filter((h) => h.operationType === 'decrypt').length})
+              </button>
+            </div>
+          </div>
+
+          {/* Table / List */}
+          {filteredHistory.length > 0 ? (
+            <div className="history-table-wrapper" role="region" aria-label="History table">
+              <table className="history-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Type</th>
+                    <th scope="col">File Name</th>
+                    <th scope="col">Size</th>
+                    <th scope="col">Timestamp</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" className="text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredHistory.map((item) => (
+                    <tr key={item.id} className="history-row">
+                      <td>
+                        <span className={`op-badge ${item.operationType}`}>
+                          {item.operationType === 'encrypt' ? 'Encrypt' : 'Decrypt'}
+                        </span>
+                      </td>
+
+                      <td>
+                        <div className="filename-cell">
+                          <span className="primary-filename" title={item.filename}>
+                            {item.filename}
+                          </span>
+                          {item.outputPath && (
+                            <span className="secondary-path" title={item.outputPath}>
+                              &rarr; {truncatePath(item.outputPath, 40)}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      <td className="size-cell">
+                        {item.fileSize > 0 ? formatBytes(item.fileSize) : '—'}
+                      </td>
+
+                      <td className="date-cell">
+                        {formatDate(item.timestamp)}
+                      </td>
+
+                      <td>
+                        <span className={`status-pill ${item.status}`}>
+                          {item.status === 'success' ? 'Completed' : 'Failed'}
+                        </span>
+                      </td>
+
+                      <td className="text-right">
+                        <button
+                          type="button"
+                          className="delete-row-btn"
+                          onClick={() => removeHistoryEntry(item.id)}
+                          title="Remove from history"
+                          aria-label={`Remove ${item.filename} from history`}
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="trash-icon"
+                            aria-hidden="true"
+                          >
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          </svg>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="no-matches">
+              <p>No operations match your current search or filter.</p>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Empty State */
+        <div className="history-empty-state">
+          <div className="empty-icon-wrap" aria-hidden="true">
+            <svg
+              className="empty-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          </div>
+          <h3 className="empty-title">No History Yet</h3>
+          <p className="empty-desc">
+            When you encrypt or decrypt files, records of the completed operations will appear here.
+          </p>
+          <div className="empty-actions">
+            <Link to="/encrypt" className="btn btn-primary">
+              Encrypt a File
+            </Link>
+            <Link to="/decrypt" className="btn btn-secondary">
+              Decrypt a File
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default History;
