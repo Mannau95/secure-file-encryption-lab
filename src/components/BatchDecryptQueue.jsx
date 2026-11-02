@@ -4,6 +4,7 @@ import { formatBytes, formatTime } from '../utils/formatters';
 import { useI18n } from '../hooks/useI18n';
 import PasswordInput from './PasswordInput';
 import FileDropZone from './FileDropZone';
+import { compareSha256 } from '../utils/hash';
 import './BatchQueue.css'; // Reuses the unified styling of BatchQueue
 
 function isTauriEnvironment() {
@@ -30,6 +31,22 @@ export function BatchDecryptQueue({
   const [destMode, setDestMode] = useState('source'); // 'source' | 'custom'
   const [customDestDir, setCustomDestDir] = useState('');
   const [clientErrors, setClientErrors] = useState({});
+  const [copiedId, setCopiedId] = useState(null);
+  const [verifyingId, setVerifyingId] = useState(null);
+  const [verifyInputs, setVerifyInputs] = useState({});
+
+  const handleCopyItemHash = async (id, hash) => {
+    if (!hash) return;
+    try {
+      await navigator.clipboard.writeText(hash);
+      setCopiedId(id);
+      setTimeout(() => {
+        setCopiedId((prev) => (prev === id ? null : prev));
+      }, 2000);
+    } catch (err) {
+      console.warn('Failed to copy item SHA-256', err);
+    }
+  };
 
   const isRunning = status === 'running';
   const isCompleted = status === 'completed' || status === 'cancelled';
@@ -232,6 +249,68 @@ export function BatchDecryptQueue({
                     {item.outputPath && (
                       <div className="queue-item-output-tag" title={item.outputPath}>
                         ✓ {item.originalName || item.outputPath} ({formatTime(Math.round(item.durationMs / 1000))})
+                      </div>
+                    )}
+
+                    {/* Restored SHA-256 fingerprint & inline verifier if available */}
+                    {item.sha256 && (
+                      <div className="queue-item-sha256-block">
+                        <div className="queue-item-sha256-row">
+                          <span className="queue-sha256-label" title={t('sha256.restoredLabel')}>
+                            🛡️ SHA-256 :
+                          </span>
+                          <code className="queue-sha256-code" title={item.sha256}>
+                            {item.sha256.slice(0, 12)}…{item.sha256.slice(-8)}
+                          </code>
+                          <button
+                            type="button"
+                            className="queue-sha256-copy-btn"
+                            onClick={() => handleCopyItemHash(item.id, item.sha256)}
+                            title={`${item.sha256} — ${t('sha256.copy')}`}
+                          >
+                            {copiedId === item.id ? `✓ ${t('sha256.copied')}` : `📋 ${t('sha256.copy')}`}
+                          </button>
+                          <button
+                            type="button"
+                            className={`queue-sha256-verify-toggle ${verifyingId === item.id ? 'active' : ''}`}
+                            onClick={() =>
+                              setVerifyingId((prev) => (prev === item.id ? null : item.id))
+                            }
+                          >
+                            🔍 {t('sha256.inspectorTitle')}
+                          </button>
+                        </div>
+
+                        {verifyingId === item.id && (
+                          <div className="queue-sha256-verify-box">
+                            <input
+                              type="text"
+                              className="text-input queue-verify-input"
+                              value={verifyInputs[item.id] || ''}
+                              onChange={(e) =>
+                                setVerifyInputs((prev) => ({
+                                  ...prev,
+                                  [item.id]: e.target.value,
+                                }))
+                              }
+                              placeholder={t('sha256.verifyPlaceholder')}
+                              spellCheck="false"
+                            />
+                            {Boolean((verifyInputs[item.id] || '').trim()) && (
+                              <span
+                                className={`queue-verify-badge ${
+                                  compareSha256(item.sha256, verifyInputs[item.id])
+                                    ? 'match'
+                                    : 'mismatch'
+                                }`}
+                              >
+                                {compareSha256(item.sha256, verifyInputs[item.id])
+                                  ? t('sha256.matchSuccess')
+                                  : t('sha256.matchMismatch')}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

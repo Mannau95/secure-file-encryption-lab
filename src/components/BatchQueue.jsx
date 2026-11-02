@@ -32,6 +32,20 @@ export function BatchQueue({
   const [destMode, setDestMode] = useState('source'); // 'source' | 'custom'
   const [customDestDir, setCustomDestDir] = useState('');
   const [clientErrors, setClientErrors] = useState({});
+  const [copiedId, setCopiedId] = useState(null);
+
+  const handleCopyItemHash = async (id, hash) => {
+    if (!hash) return;
+    try {
+      await navigator.clipboard.writeText(hash);
+      setCopiedId(id);
+      setTimeout(() => {
+        setCopiedId((prev) => (prev === id ? null : prev));
+      }, 2000);
+    } catch (err) {
+      console.warn('Failed to copy item SHA-256', err);
+    }
+  };
 
   const isRunning = status === 'running';
   const isCompleted = status === 'completed' || status === 'cancelled';
@@ -237,6 +251,26 @@ export function BatchQueue({
                     {item.outputPath && (
                       <div className="queue-item-output-tag" title={item.outputPath}>
                         ✓ {item.outputPath} ({formatTime(Math.round(item.durationMs / 1000))})
+                      </div>
+                    )}
+
+                    {/* Source SHA-256 fingerprint if available */}
+                    {item.sha256 && (
+                      <div className="queue-item-sha256-row">
+                        <span className="queue-sha256-label" title={t('sha256.sourceLabel')}>
+                          🛡️ SHA-256 :
+                        </span>
+                        <code className="queue-sha256-code" title={item.sha256}>
+                          {item.sha256.slice(0, 12)}…{item.sha256.slice(-8)}
+                        </code>
+                        <button
+                          type="button"
+                          className="queue-sha256-copy-btn"
+                          onClick={() => handleCopyItemHash(item.id, item.sha256)}
+                          title={`${item.sha256} — ${t('sha256.copy')}`}
+                        >
+                          {copiedId === item.id ? `✓ ${t('sha256.copied')}` : `📋 ${t('sha256.copy')}`}
+                        </button>
                       </div>
                     )}
                   </div>

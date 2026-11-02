@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useOperation } from '../contexts/OperationContext';
 import { getFilenameFromPath, getFileExtension } from '../utils/formatters';
+import { computeFileSha256 } from '../utils/hash';
 
 function isTauriEnvironment() {
   return typeof window !== 'undefined' && Boolean(window.__TAURI_INTERNALS__ || window.__TAURI__);
@@ -63,6 +64,7 @@ export function useBatchDecrypt() {
             progress: 0,
             outputPath: null,
             originalName: null,
+            sha256: null,
             errorMessage: null,
             durationMs: 0,
           });
@@ -102,6 +104,7 @@ export function useBatchDecrypt() {
         progress: 0,
         outputPath: null,
         originalName: null,
+        sha256: null,
         errorMessage: null,
         durationMs: 0,
       }))
@@ -318,6 +321,11 @@ export function useBatchDecrypt() {
           const originalName =
             (response && response.originalName) || getFilenameFromPath(finalOutputPath);
 
+          let restoredSha256 = null;
+          try {
+            restoredSha256 = await computeFileSha256(finalOutputPath);
+          } catch {}
+
           setQueue((prev) =>
             prev.map((item, idx) =>
               idx === i
@@ -327,6 +335,7 @@ export function useBatchDecrypt() {
                     progress: 100,
                     outputPath: finalOutputPath,
                     originalName,
+                    sha256: restoredSha256,
                     durationMs,
                   }
                 : item
@@ -339,6 +348,7 @@ export function useBatchDecrypt() {
             inputPath: currentItem.path,
             outputPath: finalOutputPath,
             fileSize: currentItem.size,
+            sha256: restoredSha256,
             status: 'success',
             durationMs,
           });

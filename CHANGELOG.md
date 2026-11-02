@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **SHA-256 Integrity Fingerprints:**
   - Added streaming SHA-256 file hashing in Rust (`crypto/hash.rs`, 64 KiB buffer) exposed via the `cmd_hash_file` Tauri command, with unit tests (empty file, known vector, missing file).
   - Source file fingerprint shown after encryption; restored file fingerprint shown after decryption, with a paste-to-compare verification field (`Sha256Inspector`).
-  - Fingerprints are recorded in the operation history entries.
+  - Integrated SHA-256 fingerprint calculation and display across Batch Encryption (`useBatchEncrypt`, `BatchQueue`) and Batch Decryption (`useBatchDecrypt`, `BatchDecryptQueue` with inline hash verification).
+  - Persisted SHA-256 fingerprints in `OperationContext` and added a dedicated `SHA-256` column with one-click copy and hash search in the History view (`History.jsx`).
   - No fabricated checksum is ever displayed in the web preview (non-Tauri) environment.
 - **Batch Encryption & Decryption Queues (v0.2.0):** Multi-file drag-and-drop queues with per-file status, progress, retry of failed items and integrity verification.
 - **Password & Passphrase Generator:** CSPRNG-based random password and Diceware passphrase generator integrated in the encryption form.

@@ -46,6 +46,7 @@ export function OperationProvider({ children }) {
       inputPath: entry.inputPath,
       outputPath: entry.outputPath || null,
       fileSize: entry.fileSize || 0,
+      sha256: entry.sha256 || null,
       status: entry.status, // 'success' | 'failed'
       durationMs: entry.durationMs || 0,
       errorMessage: entry.errorMessage || null,

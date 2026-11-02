@@ -10,20 +10,36 @@ export function History() {
   const { t } = useI18n();
   const [filterType, setFilterType] = useState('all'); // 'all' | 'encrypt' | 'decrypt'
   const [searchQuery, setSearchQuery] = useState('');
+  const [copiedId, setCopiedId] = useState(null);
+
+  const handleCopyHash = async (id, hash) => {
+    if (!hash) return;
+    try {
+      await navigator.clipboard.writeText(hash);
+      setCopiedId(id);
+      setTimeout(() => {
+        setCopiedId((prev) => (prev === id ? null : prev));
+      }, 2000);
+    } catch (e) {
+      console.warn('Failed to copy SHA-256 hash', e);
+    }
+  };
 
   const filteredHistory = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
     return history.filter((item) => {
       const matchesType = filterType === 'all' || item.operationType === filterType;
       const matchesSearch =
-        !searchQuery ||
-        (item.filename && item.filename.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (item.outputPath && item.outputPath.toLowerCase().includes(searchQuery.toLowerCase()));
+        !q ||
+        (item.filename && item.filename.toLowerCase().includes(q)) ||
+        (item.outputPath && item.outputPath.toLowerCase().includes(q)) ||
+        (item.sha256 && item.sha256.toLowerCase().includes(q));
       return matchesType && matchesSearch;
     });
   }, [history, filterType, searchQuery]);
 
   const handleClearAll = () => {
-    if (window.confirm('Voulez-vous vraiment effacer l\'historique ? (Clear history?)')) {
+    if (window.confirm(t('history.clearConfirm'))) {
       clearHistory();
     }
   };
@@ -115,6 +131,7 @@ export function History() {
                   <tr>
                     <th scope="col">{t('history.tableOperation')}</th>
                     <th scope="col">{t('history.tableFile')}</th>
+                    <th scope="col">{t('history.tableSha256')}</th>
                     <th scope="col">{t('history.tableSize')}</th>
                     <th scope="col">{t('history.tableDate')}</th>
                     <th scope="col">{t('history.tableStatus')}</th>
@@ -141,6 +158,26 @@ export function History() {
                             </span>
                           )}
                         </div>
+                      </td>
+
+                      <td className="sha256-cell">
+                        {item.sha256 ? (
+                          <button
+                            type="button"
+                            className={`hash-copy-pill ${copiedId === item.id ? 'copied' : ''}`}
+                            onClick={() => handleCopyHash(item.id, item.sha256)}
+                            title={`${item.sha256} — ${t('sha256.copy')}`}
+                          >
+                            <code className="hash-short">
+                              {item.sha256.slice(0, 8)}…{item.sha256.slice(-6)}
+                            </code>
+                            <span className="hash-copy-indicator" aria-hidden="true">
+                              {copiedId === item.id ? '✓' : '📋'}
+                            </span>
+                          </button>
+                        ) : (
+                          <span className="hash-empty">—</span>
+                        )}
                       </td>
 
                       <td className="size-cell">
@@ -187,7 +224,7 @@ export function History() {
             </div>
           ) : (
             <div className="no-matches">
-              <p>No operations match your current search or filter.</p>
+              <p>{t('history.noMatches')}</p>
             </div>
           )}
         </div>
@@ -208,16 +245,14 @@ export function History() {
               <polyline points="12 6 12 12 16 14" />
             </svg>
           </div>
-          <h3 className="empty-title">No History Yet</h3>
-          <p className="empty-desc">
-            When you encrypt or decrypt files, records of the completed operations will appear here.
-          </p>
+          <h3 className="empty-title">{t('history.emptyTitle')}</h3>
+          <p className="empty-desc">{t('history.emptyDesc')}</p>
           <div className="empty-actions">
             <Link to="/encrypt" className="btn btn-primary">
-              Encrypt a File
+              {t('common.encrypt')}
             </Link>
             <Link to="/decrypt" className="btn btn-secondary">
-              Decrypt a File
+              {t('common.decrypt')}
             </Link>
           </div>
         </div>

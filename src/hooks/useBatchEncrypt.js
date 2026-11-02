@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useOperation } from '../contexts/OperationContext';
 import { getFilenameFromPath } from '../utils/formatters';
+import { computeFileSha256 } from '../utils/hash';
 
 function isTauriEnvironment() {
   return typeof window !== 'undefined' && Boolean(window.__TAURI_INTERNALS__ || window.__TAURI__);
@@ -59,6 +60,7 @@ export function useBatchEncrypt() {
             status: 'pending', // 'pending' | 'encrypting' | 'completed' | 'failed' | 'cancelled'
             progress: 0,
             outputPath: null,
+            sha256: null,
             errorMessage: null,
             durationMs: 0,
           });
@@ -97,6 +99,7 @@ export function useBatchEncrypt() {
         status: 'pending',
         progress: 0,
         outputPath: null,
+        sha256: null,
         errorMessage: null,
         durationMs: 0,
       }))
@@ -310,6 +313,11 @@ export function useBatchEncrypt() {
               ? response
               : response?.outputPath || `${destDir}/${currentItem.name}.sfel`;
 
+          let sourceSha256 = null;
+          try {
+            sourceSha256 = await computeFileSha256(currentItem.path);
+          } catch {}
+
           setQueue((prev) =>
             prev.map((item, idx) =>
               idx === i
@@ -318,6 +326,7 @@ export function useBatchEncrypt() {
                     status: 'completed',
                     progress: 100,
                     outputPath: finalOutputPath,
+                    sha256: sourceSha256,
                     durationMs,
                   }
                 : item
@@ -330,6 +339,7 @@ export function useBatchEncrypt() {
             inputPath: currentItem.path,
             outputPath: finalOutputPath,
             fileSize: currentItem.size,
+            sha256: sourceSha256,
             status: 'success',
             durationMs,
           });

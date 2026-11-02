@@ -303,3 +303,43 @@
   gap: 1rem;
   margin-top: 0.5rem;
 }
+
+.sha256-cell {
+  white-space: nowrap;
+}
+
+.hash-copy-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.2rem 0.5rem;
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.hash-copy-pill:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.hash-copy-pill.copied {
+  border-color: var(--color-success, #10b981);
+  color: var(--color-success, #10b981);
+}
+
+.hash-short {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: 0.75rem;
+}
+
+.hash-copy-indicator {
+  font-size: 0.7rem;
+}
+
+.hash-empty {
+  color: var(--color-text-tertiary);
+}
