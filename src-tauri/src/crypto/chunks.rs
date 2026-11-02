@@ -4,10 +4,12 @@ use aes_gcm::{
     aead::{Aead, KeyInit, Payload},
     Aes256Gcm, Nonce,
 };
+use chacha20poly1305::{ChaCha20Poly1305, Nonce as ChaChaNonce};
 use zeroize::Zeroize;
 
 use crate::crypto::aead::{HEADER_SIZE, KEY_LEN, NONCE_LEN, TAG_LEN};
 use crate::error::SfelError;
+use crate::format::header::CipherAlgorithm;
 
 /// Plaintext chunk size in bytes (1 MiB).
 pub const CHUNK_SIZE: usize = 1_048_576;
@@ -107,6 +109,35 @@ pub fn decrypt_chunk(
 /// Periodically checks `check_cancel` between chunks and calls `on_progress` with
 /// `(bytes_processed, total_bytes)`.
 pub fn encrypt_stream<R: Read, W: Write, C, P>(
+    reader: R,
+    writer: W,
+    key: &[u8; KEY_LEN],
+    base_nonce: &[u8; BASE_NONCE_LEN],
+    header_bytes: &[u8; HEADER_SIZE],
+    total_file_size: u64,
+    check_cancel: C,
+    on_progress: P,
+) -> Result<(), SfelError>
+where
+    C: Fn() -> bool,
+    P: FnMut(u64, u64),
+{
+    encrypt_stream_with_cipher(
+        CipherAlgorithm::Aes256Gcm,
+        reader,
+        writer,
+        key,
+        base_nonce,
+        header_bytes,
+        total_file_size,
+        check_cancel,
+        on_progress,
+    )
+}
+
+/// Streams plaintext from `reader`, encrypts each 1 MiB chunk using `algorithm`, and writes to `writer`.
+pub fn encrypt_stream_with_cipher<R: Read, W: Write, C, P>(
+    algorithm: CipherAlgorithm,
     mut reader: R,
     mut writer: W,
     key: &[u8; KEY_LEN],
@@ -120,7 +151,8 @@ where
     C: Fn() -> bool,
     P: FnMut(u64, u64),
 {
-    let cipher = Aes256Gcm::new(key.into());
+    let aes_cipher = Aes256Gcm::new(key.into());
+    let chacha_cipher = ChaCha20Poly1305::new(key.into());
     let total_chunks = calculate_chunk_count(total_file_size);
     let mut chunk_buf = vec![0u8; CHUNK_SIZE];
     let mut bytes_processed = 0u64;
@@ -142,14 +174,28 @@ where
             bytes_read += n;
         }
 
-        let mut encrypted = encrypt_chunk(
-            &cipher,
-            base_nonce,
-            header_bytes,
-            chunk_index,
-            is_last,
-            &chunk_buf[..bytes_read],
-        )?;
+        let mut encrypted = match algorithm {
+            CipherAlgorithm::Aes256Gcm => encrypt_chunk(
+                &aes_cipher,
+                base_nonce,
+                header_bytes,
+                chunk_index,
+                is_last,
+                &chunk_buf[..bytes_read],
+            )?,
+            CipherAlgorithm::Chacha20Poly1305 => {
+                let nonce = build_chunk_nonce(base_nonce, chunk_index, is_last);
+                let aad = build_chunk_aad(header_bytes, chunk_index, is_last);
+                let chacha_nonce = ChaChaNonce::from(nonce);
+                let payload = Payload {
+                    msg: &chunk_buf[..bytes_read],
+                    aad: &aad,
+                };
+                chacha_cipher
+                    .encrypt(&chacha_nonce, payload)
+                    .map_err(|_| SfelError::IntegrityError)?
+            }
+        };
 
         writer.write_all(&encrypted)?;
 
@@ -167,6 +213,36 @@ where
 /// Streams ciphertext from `reader`, decrypts each chunk verifying its tag,
 /// and writes verified plaintext to `writer`.
 pub fn decrypt_stream<R: Read, W: Write, C, P>(
+    reader: R,
+    writer: W,
+    key: &[u8; KEY_LEN],
+    base_nonce: &[u8; BASE_NONCE_LEN],
+    header_bytes: &[u8; HEADER_SIZE],
+    total_file_size: u64,
+    check_cancel: C,
+    on_progress: P,
+) -> Result<(), SfelError>
+where
+    C: Fn() -> bool,
+    P: FnMut(u64, u64),
+{
+    decrypt_stream_with_cipher(
+        CipherAlgorithm::Aes256Gcm,
+        reader,
+        writer,
+        key,
+        base_nonce,
+        header_bytes,
+        total_file_size,
+        check_cancel,
+        on_progress,
+    )
+}
+
+/// Streams ciphertext from `reader`, decrypts each chunk using `algorithm` verifying its tag,
+/// and writes verified plaintext to `writer`.
+pub fn decrypt_stream_with_cipher<R: Read, W: Write, C, P>(
+    algorithm: CipherAlgorithm,
     mut reader: R,
     mut writer: W,
     key: &[u8; KEY_LEN],
@@ -180,7 +256,8 @@ where
     C: Fn() -> bool,
     P: FnMut(u64, u64),
 {
-    let cipher = Aes256Gcm::new(key.into());
+    let aes_cipher = Aes256Gcm::new(key.into());
+    let chacha_cipher = ChaCha20Poly1305::new(key.into());
     let total_chunks = calculate_chunk_count(total_file_size);
     let mut bytes_processed = 0u64;
 
@@ -210,14 +287,32 @@ where
             }
         }
 
-        let mut plaintext = decrypt_chunk(
-            &cipher,
-            base_nonce,
-            header_bytes,
-            chunk_index,
-            is_last,
-            &cipher_buf,
-        )?;
+        let mut plaintext = match algorithm {
+            CipherAlgorithm::Aes256Gcm => decrypt_chunk(
+                &aes_cipher,
+                base_nonce,
+                header_bytes,
+                chunk_index,
+                is_last,
+                &cipher_buf,
+            )?,
+            CipherAlgorithm::Chacha20Poly1305 => {
+                if cipher_buf.len() < TAG_LEN {
+                    cipher_buf.zeroize();
+                    return Err(SfelError::TruncatedFile);
+                }
+                let nonce = build_chunk_nonce(base_nonce, chunk_index, is_last);
+                let aad = build_chunk_aad(header_bytes, chunk_index, is_last);
+                let chacha_nonce = ChaChaNonce::from(nonce);
+                let payload = Payload {
+                    msg: &cipher_buf,
+                    aad: &aad,
+                };
+                chacha_cipher
+                    .decrypt(&chacha_nonce, payload)
+                    .map_err(|_| SfelError::AuthenticationFailed)?
+            }
+        };
 
         cipher_buf.zeroize();
 

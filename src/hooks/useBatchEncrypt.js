@@ -157,7 +157,13 @@ export function useBatchEncrypt() {
 
   // Start batch processing sequentially
   const startBatch = useCallback(
-    async ({ password, profile = 'standard', destinationDir = '' }) => {
+    async ({
+      password,
+      profile = 'standard',
+      cipher = 'aes-256-gcm',
+      keyfilePath = '',
+      destinationDir = '',
+    }) => {
       if (!password || queue.length === 0) return;
 
       stopRequestedRef.current = false;
@@ -289,6 +295,7 @@ export function useBatchEncrypt() {
         }
 
         try {
+          const cleanKeyfile = keyfilePath ? keyfilePath.trim() : null;
           const response = await invoke('cmd_encrypt', {
             sourcePath: currentItem.path,
             source_path: currentItem.path,
@@ -296,6 +303,9 @@ export function useBatchEncrypt() {
             dest_dir: destDir || '.',
             password,
             profile: profile || 'standard',
+            cipher: cipher || 'aes-256-gcm',
+            keyfilePath: cleanKeyfile || null,
+            keyfile_path: cleanKeyfile || null,
           });
 
           if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);

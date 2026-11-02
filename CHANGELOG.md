@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **v0.3.0 Advanced Cryptography (Benchmark, Keyfile 2FA, ChaCha20-Poly1305):**
+  - **Hardware Cryptographic Benchmark (`commands/benchmark.rs`, `Settings.jsx`):** Measures real-time Argon2id key derivation latency (`Fast`, `Standard`, `Paranoid`) and AEAD throughput (`AES-256-GCM` vs `ChaCha20-Poly1305` in MiB/s) via `cmd_benchmark`.
+  - **Multi-Factor Keyfile Authentication (`commands/keyfile.rs`, `KeyfileSelector.jsx`):** Combines user password with the SHA-256 fingerprint of an external keyfile (`combine_password_and_keyfile`) before Argon2id derivation, and includes a 4096-byte OS CSPRNG keyfile generator (`cmd_generate_keyfile`).
+  - **ChaCha20-Poly1305 AEAD Cipher Suite (`crypto/aead.rs`, `crypto/chunks.rs`, `format/header.rs`):** Added selectable `ChaCha20-Poly1305` (RFC 8439) alongside `AES-256-GCM` in single and chunked streaming modes, encoded in the header mode byte (`0x10`/`0x11`) and auto-detected on decryption.
 - **Folder Archival & Encryption (v0.2.0):**
   - Added recursive directory packing (`fs/archive.rs`) using TAR archives (`follow_symlinks(false)`) encrypted directly into a single `.sfel` container.
   - Added atomic directory extraction upon decryption with strict Zip-Slip / Tar-Slip path traversal protection (`..`, absolute roots, and symlink/hardlink rejection).

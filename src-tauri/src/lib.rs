@@ -5,10 +5,12 @@ pub mod format;
 pub mod fs;
 
 use commands::{
+    benchmark::cmd_benchmark,
     cancel::cmd_cancel,
     decrypt::cmd_decrypt,
     encrypt::cmd_encrypt,
     hash::cmd_hash_file,
+    keyfile::cmd_generate_keyfile,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -20,7 +22,9 @@ pub fn run() {
             cmd_encrypt,
             cmd_decrypt,
             cmd_cancel,
-            cmd_hash_file
+            cmd_hash_file,
+            cmd_generate_keyfile,
+            cmd_benchmark
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

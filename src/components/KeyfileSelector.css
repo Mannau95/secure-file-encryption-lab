@@ -1,0 +1,128 @@
+.keyfile-selector-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0.875rem 1rem;
+  background-color: var(--color-bg-primary);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  margin-top: 0.75rem;
+}
+
+.keyfile-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.keyfile-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.keyfile-icon {
+  font-size: 1rem;
+}
+
+.keyfile-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.keyfile-optional-pill {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.125rem 0.45rem;
+  border-radius: var(--radius-full);
+  background-color: var(--color-accent-subtle);
+  color: var(--color-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.keyfile-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.keyfile-actions .btn-xs {
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+}
+
+.keyfile-desc {
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.keyfile-selected-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.45rem 0.75rem;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+}
+
+.keyfile-selected-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.keyfile-selected-path {
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.keyfile-remove-btn {
+  border: none;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  padding: 0.125rem 0.35rem;
+  border-radius: var(--radius-xs);
+}
+
+.keyfile-remove-btn:hover {
+  color: var(--color-error, #ef4444);
+  background-color: var(--color-error-bg);
+}
+
+.keyfile-empty-note {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+  font-style: italic;
+}
+
+.keyfile-feedback {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--radius-xs);
+}
+
+.keyfile-feedback.success {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.keyfile-feedback.error {
+  background-color: #fee2e2;
+  color: #991b1b;
+}

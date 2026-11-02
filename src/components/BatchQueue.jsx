@@ -4,6 +4,7 @@ import { formatBytes, formatTime } from '../utils/formatters';
 import { useI18n } from '../hooks/useI18n';
 import PasswordInput from './PasswordInput';
 import FileDropZone from './FileDropZone';
+import KeyfileSelector from './KeyfileSelector';
 import './BatchQueue.css';
 
 function isTauriEnvironment() {
@@ -29,6 +30,8 @@ export function BatchQueue({
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [profile, setProfile] = useState('standard');
+  const [cipher, setCipher] = useState('aes-256-gcm');
+  const [keyfilePath, setKeyfilePath] = useState('');
   const [destMode, setDestMode] = useState('source'); // 'source' | 'custom'
   const [customDestDir, setCustomDestDir] = useState('');
   const [clientErrors, setClientErrors] = useState({});
@@ -93,6 +96,8 @@ export function BatchQueue({
     onStartBatch({
       password,
       profile,
+      cipher,
+      keyfilePath,
       destinationDir: destMode === 'custom' ? customDestDir.trim() : '',
     });
   };
@@ -495,10 +500,17 @@ export function BatchQueue({
                   {clientErrors.passwordMatch}
                 </p>
               )}
+
+              <KeyfileSelector
+                keyfilePath={keyfilePath}
+                onChange={setKeyfilePath}
+                allowGenerate={true}
+                disabled={isRunning}
+              />
             </div>
           </div>
 
-          {/* Step 3: Argon2id Profile Selection */}
+          {/* Step 3: Argon2id Profile & AEAD Cipher Selection */}
           <div className="batch-card form-step-card">
             <div className="step-header">
               <span className="step-number" aria-hidden="true">3</span>
@@ -509,6 +521,40 @@ export function BatchQueue({
             </div>
 
             <div className="step-body">
+              <div className="cipher-selector-block" style={{ marginBottom: '1rem' }}>
+                <div className="profiles-grid">
+                  <label className={`profile-card ${cipher === 'aes-256-gcm' ? 'selected' : ''}`}>
+                    <input
+                      type="radio"
+                      name="batch-cipher"
+                      value="aes-256-gcm"
+                      checked={cipher === 'aes-256-gcm'}
+                      onChange={() => setCipher('aes-256-gcm')}
+                      disabled={isRunning}
+                    />
+                    <span className="profile-badge badge-recommended">{t('encrypt.ciphers.aesBadge')}</span>
+                    <span className="profile-name">{t('encrypt.ciphers.aesTitle')}</span>
+                    <span className="profile-cost">{t('encrypt.ciphers.aesSpec')}</span>
+                    <span className="profile-desc">{t('encrypt.ciphers.aesDesc')}</span>
+                  </label>
+
+                  <label className={`profile-card ${cipher === 'chacha20-poly1305' ? 'selected' : ''}`}>
+                    <input
+                      type="radio"
+                      name="batch-cipher"
+                      value="chacha20-poly1305"
+                      checked={cipher === 'chacha20-poly1305'}
+                      onChange={() => setCipher('chacha20-poly1305')}
+                      disabled={isRunning}
+                    />
+                    <span className="profile-badge">{t('encrypt.ciphers.chachaBadge')}</span>
+                    <span className="profile-name">{t('encrypt.ciphers.chachaTitle')}</span>
+                    <span className="profile-cost">{t('encrypt.ciphers.chachaSpec')}</span>
+                    <span className="profile-desc">{t('encrypt.ciphers.chachaDesc')}</span>
+                  </label>
+                </div>
+              </div>
+
               <div className="profiles-grid">
                 <label className={`profile-card ${profile === 'fast' ? 'selected' : ''}`}>
                   <input

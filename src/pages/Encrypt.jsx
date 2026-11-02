@@ -6,6 +6,7 @@ import ProgressBar from '../components/ProgressBar';
 import StatusMessage from '../components/StatusMessage';
 import BatchQueue from '../components/BatchQueue';
 import Sha256Inspector from '../components/Sha256Inspector';
+import KeyfileSelector from '../components/KeyfileSelector';
 import { useEncrypt } from '../hooks/useEncrypt';
 import { useBatchEncrypt } from '../hooks/useBatchEncrypt';
 import { useI18n } from '../contexts/I18nContext';
@@ -25,6 +26,8 @@ export function Encrypt() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [destinationPath, setDestinationPath] = useState('');
   const [profile, setProfile] = useState('standard');
+  const [cipher, setCipher] = useState('aes-256-gcm');
+  const [keyfilePath, setKeyfilePath] = useState('');
   const [clientErrors, setClientErrors] = useState({});
 
   const {
@@ -116,6 +119,8 @@ export function Encrypt() {
       password: password,
       fileSize: selectedFile.size || 0,
       profile: profile,
+      cipher: cipher,
+      keyfilePath: keyfilePath,
     });
   };
 
@@ -124,6 +129,7 @@ export function Encrypt() {
     setSelectedFile(null);
     setPassword('');
     setConfirmPassword('');
+    setKeyfilePath('');
     setDestinationPath('');
     setClientErrors({});
   };
@@ -341,10 +347,17 @@ export function Encrypt() {
                   {clientErrors.passwordMatch}
                 </p>
               )}
+
+              <KeyfileSelector
+                keyfilePath={keyfilePath}
+                onChange={setKeyfilePath}
+                allowGenerate={true}
+                disabled={status === 'running'}
+              />
             </div>
           </div>
 
-          {/* Step 3: Argon2id Security Profile */}
+          {/* Step 3: Argon2id Security Profile & AEAD Cipher */}
           <div className="form-step-card">
             <div className="step-header">
               <span className="step-number" aria-hidden="true">3</span>
@@ -355,6 +368,42 @@ export function Encrypt() {
             </div>
 
             <div className="step-body">
+              <div className="cipher-selector-block">
+                <span className="cipher-section-label">{t('encrypt.cipherHeading')}</span>
+                <div className="cipher-cards-row">
+                  <label className={`profile-card cipher-card ${cipher === 'aes-256-gcm' ? 'selected' : ''}`}>
+                    <input
+                      type="radio"
+                      name="aead-cipher"
+                      value="aes-256-gcm"
+                      checked={cipher === 'aes-256-gcm'}
+                      onChange={() => setCipher('aes-256-gcm')}
+                      className="profile-radio"
+                    />
+                    <div className="profile-badge recommended">{t('encrypt.ciphers.aesBadge')}</div>
+                    <div className="profile-title">{t('encrypt.ciphers.aesTitle')}</div>
+                    <div className="profile-spec">{t('encrypt.ciphers.aesSpec')}</div>
+                    <p className="profile-desc">{t('encrypt.ciphers.aesDesc')}</p>
+                  </label>
+
+                  <label className={`profile-card cipher-card ${cipher === 'chacha20-poly1305' ? 'selected' : ''}`}>
+                    <input
+                      type="radio"
+                      name="aead-cipher"
+                      value="chacha20-poly1305"
+                      checked={cipher === 'chacha20-poly1305'}
+                      onChange={() => setCipher('chacha20-poly1305')}
+                      className="profile-radio"
+                    />
+                    <div className="profile-badge">{t('encrypt.ciphers.chachaBadge')}</div>
+                    <div className="profile-title">{t('encrypt.ciphers.chachaTitle')}</div>
+                    <div className="profile-spec">{t('encrypt.ciphers.chachaSpec')}</div>
+                    <p className="profile-desc">{t('encrypt.ciphers.chachaDesc')}</p>
+                  </label>
+                </div>
+              </div>
+
+              <span className="cipher-section-label">{t('encrypt.kdfHeading')}</span>
               <div className="profiles-grid">
                 <label className={`profile-card ${profile === 'fast' ? 'selected' : ''}`}>
                   <input

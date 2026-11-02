@@ -4,6 +4,7 @@ import { formatBytes, formatTime } from '../utils/formatters';
 import { useI18n } from '../hooks/useI18n';
 import PasswordInput from './PasswordInput';
 import FileDropZone from './FileDropZone';
+import KeyfileSelector from './KeyfileSelector';
 import { compareSha256 } from '../utils/hash';
 import './BatchQueue.css'; // Reuses the unified styling of BatchQueue
 
@@ -28,6 +29,7 @@ export function BatchDecryptQueue({
   const { t } = useI18n();
 
   const [password, setPassword] = useState('');
+  const [keyfilePath, setKeyfilePath] = useState('');
   const [destMode, setDestMode] = useState('source'); // 'source' | 'custom'
   const [customDestDir, setCustomDestDir] = useState('');
   const [clientErrors, setClientErrors] = useState({});
@@ -91,6 +93,7 @@ export function BatchDecryptQueue({
     setClientErrors({});
     onStartBatch({
       password,
+      keyfilePath,
       destinationDir: destMode === 'custom' ? customDestDir.trim() : '',
     });
   };
@@ -525,6 +528,13 @@ export function BatchDecryptQueue({
                   {clientErrors.password}
                 </p>
               )}
+
+              <KeyfileSelector
+                keyfilePath={keyfilePath}
+                onChange={setKeyfilePath}
+                allowGenerate={false}
+                disabled={isRunning}
+              />
             </div>
           </div>
 

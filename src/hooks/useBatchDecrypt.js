@@ -162,7 +162,7 @@ export function useBatchDecrypt() {
 
   // Start batch processing sequentially
   const startBatch = useCallback(
-    async ({ password, destinationDir = '' }) => {
+    async ({ password, keyfilePath = '', destinationDir = '' }) => {
       if (!password || queue.length === 0) return;
 
       stopRequestedRef.current = false;
@@ -296,12 +296,15 @@ export function useBatchDecrypt() {
         }
 
         try {
+          const cleanKeyfile = keyfilePath ? keyfilePath.trim() : null;
           const response = await invoke('cmd_decrypt', {
             sourcePath: currentItem.path,
             source_path: currentItem.path,
             destDir: destDir || '.',
             dest_dir: destDir || '.',
             password,
+            keyfilePath: cleanKeyfile || null,
+            keyfile_path: cleanKeyfile || null,
           });
 
           if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);

@@ -82,7 +82,15 @@ export function useEncrypt() {
   };
 
   const encrypt = useCallback(
-    async ({ inputPath, outputPath, password, fileSize = 0, profile = 'standard' }) => {
+    async ({
+      inputPath,
+      outputPath,
+      password,
+      fileSize = 0,
+      profile = 'standard',
+      cipher = 'aes-256-gcm',
+      keyfilePath = '',
+    }) => {
       if (!inputPath || !password) {
         setError('Missing required parameters for encryption.');
         setStatus('error');
@@ -153,6 +161,7 @@ export function useEncrypt() {
         unlistenRefs.current = [u1, u2, u3];
 
         // Invoke Tauri command
+        const cleanKeyfile = keyfilePath ? keyfilePath.trim() : null;
         const response = await invoke('cmd_encrypt', {
           sourcePath: inputPath,
           source_path: inputPath,
@@ -160,6 +169,9 @@ export function useEncrypt() {
           dest_dir: destDir || '.',
           password,
           profile: profile || 'standard',
+          cipher: cipher || 'aes-256-gcm',
+          keyfilePath: cleanKeyfile || null,
+          keyfile_path: cleanKeyfile || null,
         });
 
         if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);

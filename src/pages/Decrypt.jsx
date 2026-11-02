@@ -6,6 +6,7 @@ import ProgressBar from '../components/ProgressBar';
 import StatusMessage from '../components/StatusMessage';
 import BatchDecryptQueue from '../components/BatchDecryptQueue';
 import Sha256Inspector from '../components/Sha256Inspector';
+import KeyfileSelector from '../components/KeyfileSelector';
 import { useDecrypt } from '../hooks/useDecrypt';
 import { useBatchDecrypt } from '../hooks/useBatchDecrypt';
 import { useI18n } from '../contexts/I18nContext';
@@ -22,6 +23,7 @@ export function Decrypt() {
   const [activeTab, setActiveTab] = useState('single'); // 'single' | 'batch'
   const [selectedFile, setSelectedFile] = useState(null);
   const [password, setPassword] = useState('');
+  const [keyfilePath, setKeyfilePath] = useState('');
   const [destinationPath, setDestinationPath] = useState('');
   const [clientErrors, setClientErrors] = useState({});
 
@@ -116,6 +118,7 @@ export function Decrypt() {
       outputPath: destinationPath,
       password: password,
       fileSize: selectedFile.size || 0,
+      keyfilePath: keyfilePath,
     });
   };
 
@@ -123,6 +126,7 @@ export function Decrypt() {
     reset();
     setSelectedFile(null);
     setPassword('');
+    setKeyfilePath('');
     setDestinationPath('');
     setClientErrors({});
   };
@@ -332,6 +336,13 @@ export function Decrypt() {
                   {clientErrors.password}
                 </p>
               )}
+
+              <KeyfileSelector
+                keyfilePath={keyfilePath}
+                onChange={setKeyfilePath}
+                allowGenerate={false}
+                disabled={status === 'running'}
+              />
             </div>
           </div>
 

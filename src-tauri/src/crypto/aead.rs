@@ -2,8 +2,10 @@ use aes_gcm::{
     aead::{Aead, KeyInit, Payload},
     Aes256Gcm, Nonce,
 };
+use chacha20poly1305::{ChaCha20Poly1305, Nonce as ChaChaNonce};
 
 use crate::error::SfelError;
+use crate::format::header::CipherAlgorithm;
 
 /// Maximum file size supported by single-mode encryption (1 MiB).
 pub const SINGLE_MODE_MAX_SIZE: u64 = 1_048_576;
@@ -30,17 +32,44 @@ pub fn encrypt_single(
     header_bytes: &[u8; HEADER_SIZE],
     plaintext: &[u8],
 ) -> Result<Vec<u8>, SfelError> {
-    let cipher = Aes256Gcm::new(key.into());
-    let gcm_nonce = Nonce::from(*nonce);
+    encrypt_single_with_cipher(
+        CipherAlgorithm::Aes256Gcm,
+        key,
+        nonce,
+        header_bytes,
+        plaintext,
+    )
+}
 
+/// Encrypts plaintext using the specified AEAD cipher (`AES-256-GCM` or `ChaCha20-Poly1305`) in single mode.
+pub fn encrypt_single_with_cipher(
+    algorithm: CipherAlgorithm,
+    key: &[u8; KEY_LEN],
+    nonce: &[u8; NONCE_LEN],
+    header_bytes: &[u8; HEADER_SIZE],
+    plaintext: &[u8],
+) -> Result<Vec<u8>, SfelError> {
     let payload = Payload {
         msg: plaintext,
         aad: header_bytes,
     };
 
-    cipher
-        .encrypt(&gcm_nonce, payload)
-        .map_err(|_| SfelError::IntegrityError)
+    match algorithm {
+        CipherAlgorithm::Aes256Gcm => {
+            let cipher = Aes256Gcm::new(key.into());
+            let gcm_nonce = Nonce::from(*nonce);
+            cipher
+                .encrypt(&gcm_nonce, payload)
+                .map_err(|_| SfelError::IntegrityError)
+        }
+        CipherAlgorithm::Chacha20Poly1305 => {
+            let cipher = ChaCha20Poly1305::new(key.into());
+            let chacha_nonce = ChaChaNonce::from(*nonce);
+            cipher
+                .encrypt(&chacha_nonce, payload)
+                .map_err(|_| SfelError::IntegrityError)
+        }
+    }
 }
 
 /// Decrypts ciphertext and verifies the authentication tag using AES-256-GCM in single mode.
@@ -53,21 +82,48 @@ pub fn decrypt_single(
     header_bytes: &[u8; HEADER_SIZE],
     ciphertext_and_tag: &[u8],
 ) -> Result<Vec<u8>, SfelError> {
+    decrypt_single_with_cipher(
+        CipherAlgorithm::Aes256Gcm,
+        key,
+        nonce,
+        header_bytes,
+        ciphertext_and_tag,
+    )
+}
+
+/// Decrypts ciphertext and verifies the authentication tag using the specified AEAD cipher in single mode.
+pub fn decrypt_single_with_cipher(
+    algorithm: CipherAlgorithm,
+    key: &[u8; KEY_LEN],
+    nonce: &[u8; NONCE_LEN],
+    header_bytes: &[u8; HEADER_SIZE],
+    ciphertext_and_tag: &[u8],
+) -> Result<Vec<u8>, SfelError> {
     if ciphertext_and_tag.len() < TAG_LEN {
         return Err(SfelError::TruncatedFile);
     }
-
-    let cipher = Aes256Gcm::new(key.into());
-    let gcm_nonce = Nonce::from(*nonce);
 
     let payload = Payload {
         msg: ciphertext_and_tag,
         aad: header_bytes,
     };
 
-    cipher
-        .decrypt(&gcm_nonce, payload)
-        .map_err(|_| SfelError::AuthenticationFailed)
+    match algorithm {
+        CipherAlgorithm::Aes256Gcm => {
+            let cipher = Aes256Gcm::new(key.into());
+            let gcm_nonce = Nonce::from(*nonce);
+            cipher
+                .decrypt(&gcm_nonce, payload)
+                .map_err(|_| SfelError::AuthenticationFailed)
+        }
+        CipherAlgorithm::Chacha20Poly1305 => {
+            let cipher = ChaCha20Poly1305::new(key.into());
+            let chacha_nonce = ChaChaNonce::from(*nonce);
+            cipher
+                .decrypt(&chacha_nonce, payload)
+                .map_err(|_| SfelError::AuthenticationFailed)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -171,5 +227,46 @@ mod tests {
 
         let result = decrypt_single(&key, &nonce, &header, &[0u8; 15]);
         assert_eq!(result, Err(SfelError::TruncatedFile));
+    }
+
+    #[test]
+    fn test_chacha20_poly1305_single_roundtrip_and_tamper() {
+        let key = [0x66u8; 32];
+        let nonce = [0xBBu8; 12];
+        let header = [0x22u8; 128];
+        let plaintext = b"Testing ChaCha20-Poly1305 AEAD single mode.";
+
+        let mut encrypted = encrypt_single_with_cipher(
+            CipherAlgorithm::Chacha20Poly1305,
+            &key,
+            &nonce,
+            &header,
+            plaintext,
+        )
+        .unwrap();
+        assert_eq!(encrypted.len(), plaintext.len() + TAG_LEN);
+
+        let decrypted = decrypt_single_with_cipher(
+            CipherAlgorithm::Chacha20Poly1305,
+            &key,
+            &nonce,
+            &header,
+            &encrypted,
+        )
+        .unwrap();
+        assert_eq!(decrypted, plaintext);
+
+        // Tamper 1 bit -> must fail authentication
+        encrypted[0] ^= 0x01;
+        assert_eq!(
+            decrypt_single_with_cipher(
+                CipherAlgorithm::Chacha20Poly1305,
+                &key,
+                &nonce,
+                &header,
+                &encrypted
+            ),
+            Err(SfelError::AuthenticationFailed)
+        );
     }
 }

@@ -7,12 +7,12 @@ use tauri::{AppHandle, Emitter};
 use zeroize::Zeroize;
 
 use crate::commands::cancel::{is_cancelled, reset_cancel};
-use crate::crypto::aead::{encrypt_single, SINGLE_MODE_MAX_SIZE};
-use crate::crypto::chunks::encrypt_stream;
-use crate::crypto::kdf::{derive_key, Argon2Profile};
+use crate::crypto::aead::{encrypt_single_with_cipher, SINGLE_MODE_MAX_SIZE};
+use crate::crypto::chunks::encrypt_stream_with_cipher;
+use crate::crypto::kdf::{combine_password_and_keyfile, derive_key, Argon2Profile};
 use crate::crypto::rng::{random_base_nonce, random_nonce, random_salt};
 use crate::error::SfelError;
-use crate::format::header::{EncryptionMode, SfelHeader, MAX_NAME_LEN};
+use crate::format::header::{CipherAlgorithm, EncryptionMode, SfelHeader, MAX_NAME_LEN};
 use crate::format::validation::{validate_password, validate_source_and_dest};
 use crate::fs::archive::{create_folder_tar, make_folder_archive_name};
 use crate::fs::temp::TempFileGuard;
@@ -39,15 +39,28 @@ where
 }
 
 /// Core file encryption engine with configurable Argon2id profile.
-///
-/// Encrypts `source_path` with `password` using AES-256-GCM and Argon2id.
-/// Automatically selects single-shot mode (<= 1 MiB) or chunked streaming mode (> 1 MiB).
-/// Emits progress through the `progress` callback.
 pub fn encrypt_file_with_profile<P>(
     source_path: &Path,
     password: &str,
     dest_dir: &Path,
     profile: Option<Argon2Profile>,
+    progress: P,
+) -> Result<PathBuf, SfelError>
+where
+    P: FnMut(f64, u64, u64),
+{
+    encrypt_file_with_options(source_path, password, dest_dir, profile, None, None, progress)
+}
+
+/// Core file encryption engine with configurable Argon2id profile, AEAD cipher algorithm,
+/// and optional keyfile path.
+pub fn encrypt_file_with_options<P>(
+    source_path: &Path,
+    password: &str,
+    dest_dir: &Path,
+    profile: Option<Argon2Profile>,
+    cipher: Option<CipherAlgorithm>,
+    keyfile_path: Option<&Path>,
     mut progress: P,
 ) -> Result<PathBuf, SfelError>
 where
@@ -108,9 +121,11 @@ where
 
     let kdf_profile = profile.unwrap_or_default();
     let kdf_params = kdf_profile.params();
+    let cipher_algo = cipher.unwrap_or_default();
 
-    let header = SfelHeader::new(
+    let header = SfelHeader::new_with_cipher(
         mode,
+        cipher_algo,
         kdf_params.memory_kib,
         kdf_params.iterations,
         kdf_params.parallelism,
@@ -122,8 +137,9 @@ where
 
     let header_bytes = header.to_bytes()?;
 
-    // 4. Derive encryption key using Argon2id
-    let key = derive_key(password.as_bytes(), &salt, &kdf_params)?;
+    // 4. Derive encryption key using Argon2id (combining password and optional keyfile)
+    let combined_secret = combine_password_and_keyfile(password, keyfile_path)?;
+    let key = derive_key(&combined_secret, &salt, &kdf_params)?;
 
     // 5. Initialize temp file in target directory for atomic write
     let mut temp = TempFileGuard::create_in_same_dir(&dest_path)?;
@@ -131,7 +147,7 @@ where
     // Write 128-byte header
     temp.file_mut()?.write_all(&header_bytes)?;
 
-    // 6. Perform encryption based on selected mode
+    // 6. Perform encryption based on selected mode and cipher
     if is_single_mode {
         if is_cancelled() {
             return Err(SfelError::Cancelled);
@@ -139,7 +155,8 @@ where
 
         let mut plaintext = Vec::with_capacity(total_bytes as usize);
         std::io::Read::read_to_end(&mut source_file, &mut plaintext)?;
-        let mut ciphertext = encrypt_single(&key, &nonce, &header_bytes, &plaintext)?;
+        let mut ciphertext =
+            encrypt_single_with_cipher(cipher_algo, &key, &nonce, &header_bytes, &plaintext)?;
         plaintext.zeroize();
 
         temp.file_mut()?.write_all(&ciphertext)?;
@@ -148,7 +165,8 @@ where
 
         progress(100.0, total_bytes, total_bytes);
     } else {
-        encrypt_stream(
+        encrypt_stream_with_cipher(
+            cipher_algo,
             source_file,
             temp.file_mut()?,
             &key,
@@ -176,7 +194,7 @@ where
     Ok(dest_path)
 }
 
-/// Tauri command handler for file encryption with optional Argon2id profile.
+/// Tauri command handler for file encryption with optional Argon2id profile, cipher algorithm, and keyfile.
 #[tauri::command]
 pub fn cmd_encrypt(
     app: AppHandle,
@@ -184,13 +202,24 @@ pub fn cmd_encrypt(
     mut password: String,
     dest_dir: String,
     profile: Option<String>,
+    cipher: Option<String>,
+    keyfile_path: Option<String>,
 ) -> Result<String, SfelError> {
     let kdf_profile = Argon2Profile::from_str_opt(profile.as_deref());
-    let result = encrypt_file_with_profile(
+    let cipher_algo = CipherAlgorithm::from_str_opt(cipher.as_deref());
+    let kf_path = keyfile_path
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(Path::new);
+
+    let result = encrypt_file_with_options(
         Path::new(&source_path),
         &password,
         Path::new(&dest_dir),
         Some(kdf_profile),
+        Some(cipher_algo),
+        kf_path,
         |percent, bytes_processed, total_bytes| {
             let payload = ProgressPayload {
                 percent,

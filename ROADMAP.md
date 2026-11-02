@@ -59,17 +59,17 @@ This roadmap outlines the planned development milestones for the Secure File Enc
 
 ---
 
-### v0.3.0 — Advanced Cryptography & Portability
+### v0.3.0 — Advanced Cryptography & Portability (Current Milestone)
 
-**Focus:** Alternative cipher suites, keyfile support, and multi-platform hardening.
+**Focus:** Alternative cipher suites, keyfile multi-factor authentication, hardware benchmarking, and multi-platform hardening.
 
-- [ ] **XChaCha20-Poly1305 Cipher Suite:** Support for 192-bit extended nonces, removing nonce collision risks even across billions of operations.
-- [ ] **Keyfile Authentication:** Multi-factor derivation combining user password with an external keyfile (e.g., USB key or random binary file).
+- [x] **ChaCha20-Poly1305 / XChaCha20-Poly1305 Cipher Suite:** Support for the RFC 8439 ARX AEAD cipher alongside AES-256-GCM, automatically encoded and detected via the SFEL header mode byte (`0x10` / `0x11`).
+- [x] **Keyfile Authentication (2FA):** Multi-factor derivation combining user password with the SHA-256 digest of an external keyfile (`SFEL-KEYFILE-V1` domain separation), plus a 4096-byte CSPRNG keyfile generator (`cmd_generate_keyfile`).
 - [ ] **Extended Internationalization (i18n):** Additional localized UI strings beyond English & French (Spanish, German, Japanese, Simplified Chinese).
 - [ ] **Cross-Platform Hardening & CI:**
   - Automated CI test matrix across Windows 11, macOS (Apple Silicon & Intel), and Ubuntu Linux.
   - Verification of OS-level atomic renames across APFS, NTFS, and ext4 filesystems.
-- [ ] **Benchmark Utility:** Built-in benchmarking tool to measure Argon2id derivation latency and AES-GCM streaming throughput on the user's CPU.
+- [x] **Benchmark Utility:** Built-in hardware benchmarking tool (`cmd_benchmark`) measuring Argon2id derivation latency across all 3 profiles (`Fast`, `Standard`, `Paranoid`) and AEAD streaming throughput (`AES-256-GCM` vs `ChaCha20-Poly1305`) on the user's CPU.
 
 ---
 

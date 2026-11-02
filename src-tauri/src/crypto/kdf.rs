@@ -1,7 +1,9 @@
 use argon2::{Algorithm, Argon2, Params, Version};
 use zeroize::Zeroizing;
 
+use crate::crypto::hash::compute_sha256_file;
 use crate::error::SfelError;
+use std::path::Path;
 
 /// Default Argon2id memory cost in KiB (64 MiB).
 pub const DEFAULT_MEMORY_KIB: u32 = 65_536;
@@ -82,6 +84,40 @@ impl Default for Argon2Profile {
     fn default() -> Self {
         Argon2Profile::Standard
     }
+}
+
+/// Combines a user password with an optional external keyfile into a domain-separated
+/// secret buffer (`Zeroizing<Vec<u8>>`).
+///
+/// - When `keyfile_path` is `None` or empty, returns the raw `password` bytes unchanged
+///   (preserving 100% compatibility with password-only containers).
+/// - When `keyfile_path` is provided, computes the streaming SHA-256 digest (32 bytes) of
+///   the keyfile and builds `b"SFEL-KEYFILE-V1:" || keyfile_sha256(32B) || b":" || password_bytes`.
+pub fn combine_password_and_keyfile(
+    password: &str,
+    keyfile_path: Option<&Path>,
+) -> Result<Zeroizing<Vec<u8>>, SfelError> {
+    if let Some(path) = keyfile_path {
+        if !path.as_os_str().is_empty() {
+            if !path.exists() {
+                return Err(SfelError::FileNotFound(path.display().to_string()));
+            }
+            if !path.is_file() {
+                return Err(SfelError::InvalidParameters(format!(
+                    "Keyfile path '{}' is not a regular file",
+                    path.display()
+                )));
+            }
+            let hex_digest = compute_sha256_file(path)?;
+            let mut combined = Vec::with_capacity(16 + 64 + 1 + password.len());
+            combined.extend_from_slice(b"SFEL-KEYFILE-V1:");
+            combined.extend_from_slice(hex_digest.as_bytes());
+            combined.push(b':');
+            combined.extend_from_slice(password.as_bytes());
+            return Ok(Zeroizing::new(combined));
+        }
+    }
+    Ok(Zeroizing::new(password.as_bytes().to_vec()))
 }
 
 /// Derives a 256-bit cryptographic key from a password and salt using Argon2id.
@@ -187,5 +223,33 @@ mod tests {
         let paranoid_params = Argon2Profile::Paranoid.params();
         assert_eq!(paranoid_params.memory_kib, 262_144);
         assert_eq!(paranoid_params.iterations, 5);
+    }
+
+    #[test]
+    fn test_combine_password_and_keyfile() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        let mut kf1 = NamedTempFile::new().unwrap();
+        kf1.write_all(b"random-keyfile-material-1").unwrap();
+        kf1.flush().unwrap();
+
+        let mut kf2 = NamedTempFile::new().unwrap();
+        kf2.write_all(b"random-keyfile-material-2").unwrap();
+        kf2.flush().unwrap();
+
+        let salt = [7u8; 16];
+        let pass = "my_secret_pass";
+
+        let secret_no_kf = combine_password_and_keyfile(pass, None).unwrap();
+        let secret_kf1 = combine_password_and_keyfile(pass, Some(kf1.path())).unwrap();
+        let secret_kf2 = combine_password_and_keyfile(pass, Some(kf2.path())).unwrap();
+
+        let key_no_kf = derive_key(&secret_no_kf, &salt, &TEST_PARAMS).unwrap();
+        let key_kf1 = derive_key(&secret_kf1, &salt, &TEST_PARAMS).unwrap();
+        let key_kf2 = derive_key(&secret_kf2, &salt, &TEST_PARAMS).unwrap();
+
+        assert_ne!(*key_no_kf, *key_kf1);
+        assert_ne!(*key_kf1, *key_kf2);
     }
 }

@@ -1,8 +1,8 @@
 # Project State: Secure File Encryption Lab (SFEL)
 
-**Current Status:** Phases 1 to 7 Complete — v0.2.0 Milestone 100% Complete (Full Test Suite Validated: 60 tests passing)  
+**Current Status:** Phases 1 to 8 Complete — v0.3.0 Core Deliverables Complete (Full Test Suite Validated: 64 tests passing)  
 **Last Updated:** November 2026  
-**Current Version:** v0.2.0
+**Current Version:** v0.3.0
 
 ---
 
@@ -16,7 +16,8 @@
 | **Phase 4** | React Frontend UI, State Management & Themes | **Complete** |
 | **Phase 5** | Educational Lab Page & Visual Cryptography Guides | **Complete** |
 | **Phase 6** | Toolchain Configuration & Full Test Suite | **Complete** |
-| **Phase 7** | v0.2.0 Enhancements (Profiles, Batch Queues, CSPRNG Generator, i18n, SHA-256) | **Complete** |
+| **Phase 7** | v0.2.0 Enhancements (Profiles, Batch Queues, CSPRNG Generator, i18n, SHA-256, Folder Archival) | **Complete** |
+| **Phase 8** | v0.3.0 Advanced Cryptography (Hardware Benchmark, 2FA Keyfile Auth, ChaCha20-Poly1305) | **Complete** |
 
 ---
 
@@ -72,12 +73,12 @@
   - Configured MSVC C++ Build Tools (`link.exe` and Windows SDK).
   - Fixed Tauri 2 configuration schema (`tauri.conf.json`) and updated CSPRNG bindings for `rand 0.9` (`TryRngCore`).
 - [x] **Full Cryptographic Test Suite Execution (`cargo test`):**
-  - **41 unit tests** in `sfel_lib`: Argon2id KDF & profiles, AES-256-GCM AEAD, streaming chunks, SHA-256 file hashing, RAII `TempFileGuard`, atomic write, TAR directory archival/extraction, cancellation tokens.
+  - **44 unit tests** in `sfel_lib`: Argon2id KDF & profiles, password+keyfile derivation, AES-256-GCM & ChaCha20-Poly1305 AEAD, streaming chunks, SHA-256 file hashing, 4096-byte CSPRNG keyfile generation, RAII `TempFileGuard`, atomic write, TAR directory archival/extraction, cancellation tokens.
   - **2 crypto tests** in `crypto_tests.rs`: Determinism and single-mode roundtrip.
   - **3 format tests** in `format_tests.rs`: Header validation bounds, magic bytes, version checks, and serialization.
-  - **8 roundtrip tests** in `roundtrip_tests.rs`: 1 byte, 1 KiB, 1 MiB, 1 MiB + 1, 5 MiB, empty file, Unicode filenames, and nested folder archive encryption/decryption.
+  - **9 roundtrip tests** in `roundtrip_tests.rs`: 1 byte, 1 KiB, 1 MiB, 1 MiB + 1, 5 MiB, empty file, Unicode filenames, nested folder archive encryption/decryption, and ChaCha20-Poly1305 + Keyfile 2FA roundtrip.
   - **6 security tests** in `security_tests.rs`: Chunk corruption detection, chunk reorder detection, header tampering, zero partial output on failure, truncation detection, and wrong password rejection.
-  - **Summary: 60 tests passed, 0 failed.**
+  - **Summary: 64 tests passed, 0 failed.**
 - [x] **Frontend Production Build:**
   - Verified clean build (`npm run build`) with zero errors.
 

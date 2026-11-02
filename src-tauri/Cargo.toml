@@ -1,6 +1,6 @@
 [package]
 name = "secure-file-encryption-lab"
-version = "0.2.0"
+version = "0.3.0"
 description = "Professional desktop file encryption using AES-256-GCM and Argon2id"
 authors = ["SFEL Developer"]
 license = "MIT OR Apache-2.0"
@@ -24,6 +24,7 @@ thiserror = "2"
 
 # Cryptography (RustCrypto ecosystem)
 aes-gcm = "0.11"
+chacha20poly1305 = "0.11"
 argon2 = "0.6"
 rand = { version = "0.9", features = ["os_rng"] }
 zeroize = { version = "1", features = ["derive", "aarch64"] }

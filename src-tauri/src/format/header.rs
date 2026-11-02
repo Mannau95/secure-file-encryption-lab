@@ -22,15 +22,68 @@ pub enum EncryptionMode {
     Chunked = 0x01,
 }
 
+/// Authenticated Encryption with Associated Data (AEAD) cipher algorithm.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum CipherAlgorithm {
+    /// AES-256-GCM (Galois/Counter Mode, 128-bit authentication tag).
+    Aes256Gcm,
+    /// ChaCha20-Poly1305 / XChaCha20-Poly1305 family (256-bit key, 128-bit Poly1305 tag).
+    Chacha20Poly1305,
+}
+
+impl CipherAlgorithm {
+    pub fn from_str_opt(s: Option<&str>) -> Self {
+        match s.map(|v| v.to_ascii_lowercase()).as_deref() {
+            Some("chacha20-poly1305")
+            | Some("xchacha20-poly1305")
+            | Some("chacha20")
+            | Some("xchacha20") => CipherAlgorithm::Chacha20Poly1305,
+            _ => CipherAlgorithm::Aes256Gcm,
+        }
+    }
+}
+
+impl Default for CipherAlgorithm {
+    fn default() -> Self {
+        CipherAlgorithm::Aes256Gcm
+    }
+}
+
+impl EncryptionMode {
+    /// Encodes the encryption mode and cipher algorithm into the single SFEL mode byte.
+    /// - `0x00`: AES-256-GCM Single
+    /// - `0x01`: AES-256-GCM Chunked
+    /// - `0x10`: ChaCha20-Poly1305 Single
+    /// - `0x11`: ChaCha20-Poly1305 Chunked
+    pub fn to_mode_byte(self, cipher: CipherAlgorithm) -> u8 {
+        let base = match self {
+            EncryptionMode::Single => 0x00,
+            EncryptionMode::Chunked => 0x01,
+        };
+        match cipher {
+            CipherAlgorithm::Aes256Gcm => base,
+            CipherAlgorithm::Chacha20Poly1305 => base | 0x10,
+        }
+    }
+
+    /// Decodes a raw SFEL mode byte into `(EncryptionMode, CipherAlgorithm)`.
+    pub fn from_mode_byte(val: u8) -> Result<(Self, CipherAlgorithm), SfelError> {
+        match val {
+            0x00 => Ok((EncryptionMode::Single, CipherAlgorithm::Aes256Gcm)),
+            0x01 => Ok((EncryptionMode::Chunked, CipherAlgorithm::Aes256Gcm)),
+            0x10 => Ok((EncryptionMode::Single, CipherAlgorithm::Chacha20Poly1305)),
+            0x11 => Ok((EncryptionMode::Chunked, CipherAlgorithm::Chacha20Poly1305)),
+            _ => Err(SfelError::InvalidFormat),
+        }
+    }
+}
+
 impl TryFrom<u8> for EncryptionMode {
     type Error = SfelError;
 
     fn try_from(val: u8) -> Result<Self, Self::Error> {
-        match val {
-            0x00 => Ok(EncryptionMode::Single),
-            0x01 => Ok(EncryptionMode::Chunked),
-            _ => Err(SfelError::InvalidFormat),
-        }
+        EncryptionMode::from_mode_byte(val).map(|(mode, _)| mode)
     }
 }
 
@@ -39,6 +92,7 @@ impl TryFrom<u8> for EncryptionMode {
 pub struct SfelHeader {
     pub version: u8,
     pub mode: EncryptionMode,
+    pub cipher: CipherAlgorithm,
     pub argon2_memory: u32,
     pub argon2_iterations: u32,
     pub argon2_parallelism: u32,
@@ -49,9 +103,34 @@ pub struct SfelHeader {
 }
 
 impl SfelHeader {
-    /// Creates a new SFEL header instance.
+    /// Creates a new SFEL header instance (defaults to AES-256-GCM).
     pub fn new(
         mode: EncryptionMode,
+        argon2_memory: u32,
+        argon2_iterations: u32,
+        argon2_parallelism: u32,
+        salt: [u8; 16],
+        nonce: [u8; 12],
+        original_file_size: u64,
+        original_name: String,
+    ) -> Self {
+        Self::new_with_cipher(
+            mode,
+            CipherAlgorithm::Aes256Gcm,
+            argon2_memory,
+            argon2_iterations,
+            argon2_parallelism,
+            salt,
+            nonce,
+            original_file_size,
+            original_name,
+        )
+    }
+
+    /// Creates a new SFEL header instance with an explicit AEAD cipher algorithm.
+    pub fn new_with_cipher(
+        mode: EncryptionMode,
+        cipher: CipherAlgorithm,
         argon2_memory: u32,
         argon2_iterations: u32,
         argon2_parallelism: u32,
@@ -63,6 +142,7 @@ impl SfelHeader {
         Self {
             version: CURRENT_VERSION,
             mode,
+            cipher,
             argon2_memory,
             argon2_iterations,
             argon2_parallelism,
@@ -106,8 +186,8 @@ impl SfelHeader {
         // 4: Version (0x01)
         buf[4] = self.version;
 
-        // 5: Mode (0x00 single, 0x01 chunked)
-        buf[5] = self.mode as u8;
+        // 5: Mode + Cipher byte (0x00/0x01 for AES-256-GCM, 0x10/0x11 for ChaCha20-Poly1305)
+        buf[5] = self.mode.to_mode_byte(self.cipher);
 
         // 6..10: Argon2 memory (KiB) big-endian u32
         buf[6..10].copy_from_slice(&self.argon2_memory.to_be_bytes());
@@ -155,8 +235,8 @@ impl SfelHeader {
             return Err(SfelError::UnsupportedVersion(version));
         }
 
-        // Validate Mode
-        let mode = EncryptionMode::try_from(bytes[5])?;
+        // Validate Mode & Cipher
+        let (mode, cipher) = EncryptionMode::from_mode_byte(bytes[5])?;
 
         // Read Argon2 parameters
         let argon2_memory = u32::from_be_bytes(bytes[6..10].try_into().unwrap());
@@ -188,6 +268,7 @@ impl SfelHeader {
         Ok(Self {
             version,
             mode,
+            cipher,
             argon2_memory,
             argon2_iterations,
             argon2_parallelism,

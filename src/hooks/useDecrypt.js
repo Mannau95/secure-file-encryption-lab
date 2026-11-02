@@ -80,7 +80,7 @@ export function useDecrypt() {
   };
 
   const decrypt = useCallback(
-    async ({ inputPath, outputPath, password, fileSize = 0 }) => {
+    async ({ inputPath, outputPath, password, fileSize = 0, keyfilePath = '' }) => {
       if (!inputPath || !outputPath || !password) {
         setError('Missing required parameters for decryption.');
         setStatus('error');
@@ -149,12 +149,15 @@ export function useDecrypt() {
           ? outputPath.replace(/[/\\][^/\\]+$/, '') 
           : inputPath.replace(/[/\\][^/\\]+$/, '');
 
+        const cleanKeyfile = keyfilePath ? keyfilePath.trim() : null;
         const response = await invoke('cmd_decrypt', {
           sourcePath: inputPath,
           source_path: inputPath,
           destDir: destDir || '.',
           dest_dir: destDir || '.',
           password,
+          keyfilePath: cleanKeyfile || null,
+          keyfile_path: cleanKeyfile || null,
         });
 
         if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);

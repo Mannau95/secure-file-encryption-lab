@@ -144,3 +144,65 @@ fn test_roundtrip_folder_archive() {
         &[0xDE, 0xAD, 0xBE, 0xEF]
     );
 }
+
+
+#[test]
+fn test_roundtrip_chacha20_and_keyfile() {
+    use sfel_lib::commands::decrypt::decrypt_file_with_options;
+    use sfel_lib::commands::encrypt::encrypt_file_with_options;
+    use sfel_lib::commands::keyfile::generate_keyfile;
+    use sfel_lib::crypto::kdf::Argon2Profile;
+    use sfel_lib::format::header::CipherAlgorithm;
+
+    let temp = tempdir().expect("Failed to create temporary directory");
+    let source_dir = temp.path().join("source");
+    let enc_dir = temp.path().join("encrypted");
+    let dec_dir = temp.path().join("decrypted");
+
+    fs::create_dir(&source_dir).unwrap();
+    fs::create_dir(&enc_dir).unwrap();
+    fs::create_dir(&dec_dir).unwrap();
+
+    // Generate a 4096-byte CSPRNG keyfile
+    let keyfile_path = temp.path().join("secret.sfel.key");
+    generate_keyfile(&keyfile_path).expect("Keyfile generation failed");
+
+    // 1.5 MiB payload to exercise chunked mode with ChaCha20-Poly1305 + Keyfile
+    let payload = vec![0x5Au8; 1_572_864];
+    let source_file = source_dir.join("chacha_keyfile_test.bin");
+    fs::write(&source_file, &payload).unwrap();
+
+    let enc_path = encrypt_file_with_options(
+        &source_file,
+        "multi_factor_pass",
+        &enc_dir,
+        Some(Argon2Profile::Fast),
+        Some(CipherAlgorithm::Chacha20Poly1305),
+        Some(&keyfile_path),
+        |_, _, _| {},
+    )
+    .expect("ChaCha20 + Keyfile encryption failed");
+
+    // Attempting decryption WITHOUT keyfile must fail authentication
+    let wrong_res = decrypt_file_with_options(
+        &enc_path,
+        "multi_factor_pass",
+        &dec_dir,
+        None,
+        |_, _, _| {},
+    );
+    assert!(wrong_res.is_err(), "Decryption without keyfile must fail");
+
+    // Decrypting WITH matching password + keyfile must succeed
+    let dec_path = decrypt_file_with_options(
+        &enc_path,
+        "multi_factor_pass",
+        &dec_dir,
+        Some(&keyfile_path),
+        |_, _, _| {},
+    )
+    .expect("ChaCha20 + Keyfile decryption failed");
+
+    let restored = fs::read(&dec_path).unwrap();
+    assert_eq!(restored, payload);
+}

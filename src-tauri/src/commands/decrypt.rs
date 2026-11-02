@@ -7,9 +7,9 @@ use tauri::{AppHandle, Emitter};
 use zeroize::Zeroize;
 
 use crate::commands::cancel::{is_cancelled, reset_cancel};
-use crate::crypto::aead::{decrypt_single, HEADER_SIZE, TAG_LEN};
-use crate::crypto::chunks::{calculate_chunk_count, decrypt_stream};
-use crate::crypto::kdf::{derive_key, KdfParams};
+use crate::crypto::aead::{decrypt_single_with_cipher, HEADER_SIZE, TAG_LEN};
+use crate::crypto::chunks::{calculate_chunk_count, decrypt_stream_with_cipher};
+use crate::crypto::kdf::{combine_password_and_keyfile, derive_key, KdfParams};
 use crate::error::SfelError;
 use crate::format::header::{EncryptionMode, SfelHeader};
 use crate::format::validation::{validate_header, validate_paths, validate_password};
@@ -25,15 +25,27 @@ pub struct ProgressPayload {
 }
 
 /// Core file decryption engine.
-///
-/// Decrypts an `.sfel` container file with `password`.
-/// Authenticates all ciphertext tags before atomic finalization.
-/// Guarantees that on any failure (wrong password, tampered bits, truncation),
-/// no partial output is left on disk.
 pub fn decrypt_file<P>(
     source_path: &Path,
     password: &str,
     dest_dir: &Path,
+    progress: P,
+) -> Result<PathBuf, SfelError>
+where
+    P: FnMut(f64, u64, u64),
+{
+    decrypt_file_with_options(source_path, password, dest_dir, None, progress)
+}
+
+/// Core file decryption engine with optional keyfile authentication.
+///
+/// Decrypts an `.sfel` container file with `password` (and optional `keyfile_path`).
+/// Automatically detects the AEAD cipher (`AES-256-GCM` or `ChaCha20-Poly1305`) from the header.
+pub fn decrypt_file_with_options<P>(
+    source_path: &Path,
+    password: &str,
+    dest_dir: &Path,
+    keyfile_path: Option<&Path>,
     mut progress: P,
 ) -> Result<PathBuf, SfelError>
 where
@@ -84,13 +96,14 @@ where
         return Err(SfelError::IntegrityError);
     }
 
-    // 4. Derive decryption key using Argon2id
+    // 4. Derive decryption key using Argon2id (combining password and optional keyfile)
     let kdf_params = KdfParams {
         memory_kib: header.argon2_memory,
         iterations: header.argon2_iterations,
         parallelism: header.argon2_parallelism,
     };
-    let key = derive_key(password.as_bytes(), &header.salt, &kdf_params)?;
+    let combined_secret = combine_password_and_keyfile(password, keyfile_path)?;
+    let key = derive_key(&combined_secret, &header.salt, &kdf_params)?;
 
     // 5. Determine destination path safely (detecting whether container holds a folder archive)
     let is_folder_archive = strip_folder_archive_suffix(&header.original_name);
@@ -136,8 +149,13 @@ where
             let mut cipher_buf = vec![0u8; cipher_len];
             source_file.read_exact(&mut cipher_buf)?;
 
-            let mut plaintext =
-                decrypt_single(&key, &header.nonce, &header_bytes, &cipher_buf)?;
+            let mut plaintext = decrypt_single_with_cipher(
+                header.cipher,
+                &key,
+                &header.nonce,
+                &header_bytes,
+                &cipher_buf,
+            )?;
             cipher_buf.zeroize();
 
             if plaintext.len() as u64 != header.original_file_size {
@@ -152,7 +170,8 @@ where
         }
         EncryptionMode::Chunked => {
             let base_nonce = header.base_nonce();
-            decrypt_stream(
+            decrypt_stream_with_cipher(
+                header.cipher,
                 source_file,
                 temp.file_mut()?,
                 &key,
@@ -184,18 +203,26 @@ where
     Ok(dest_path)
 }
 
-/// Tauri command handler for file decryption.
+/// Tauri command handler for file decryption with optional keyfile.
 #[tauri::command]
 pub fn cmd_decrypt(
     app: AppHandle,
     source_path: String,
     mut password: String,
     dest_dir: String,
+    keyfile_path: Option<String>,
 ) -> Result<String, SfelError> {
-    let result = decrypt_file(
+    let kf_path = keyfile_path
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(Path::new);
+
+    let result = decrypt_file_with_options(
         Path::new(&source_path),
         &password,
         Path::new(&dest_dir),
+        kf_path,
         |percent, bytes_processed, total_bytes| {
             let payload = ProgressPayload {
                 percent,
