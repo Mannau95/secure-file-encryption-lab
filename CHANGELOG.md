@@ -5,9 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.0] - 2026-11-02
 
 ### Added
+- **v1.0.0 Production Hardening & Release Pipeline:**
+  - **Fuzzing & Malformed Input Test Suite (`tests/fuzz_tests.rs`):** Automated fuzz harness testing 5,000+ random/mutated 128-byte headers, 500+ AEAD single/stream mutations, end-to-end decryptor tampering, and malformed TAR archive cleanup with zero panics and zero temporary file leaks.
+  - **Cross-Platform CI & Release Workflows (`.github/workflows/ci.yml`, `.github/workflows/release.yml`):** Automated build and test verification across Windows, macOS (Apple Silicon & Intel), and Ubuntu Linux, plus automated installer bundling (`.msi`, NSIS `.exe`, `.dmg`, `.AppImage`, `.deb`).
+  - **Formal SFEL v1 Format Freeze (`docs/CRYPTO_FORMAT.md`):** Complete 128-byte header specification covering `AES-256-GCM` (`0x00`/`0x01`), `ChaCha20-Poly1305` (`0x10`/`0x11`), `SFEL-KEYFILE-V1` 2FA derivation, and `.sfel-folder.tar` directory archival.
 - **v0.3.0 Advanced Cryptography (Benchmark, Keyfile 2FA, ChaCha20-Poly1305):**
   - **Hardware Cryptographic Benchmark (`commands/benchmark.rs`, `Settings.jsx`):** Measures real-time Argon2id key derivation latency (`Fast`, `Standard`, `Paranoid`) and AEAD throughput (`AES-256-GCM` vs `ChaCha20-Poly1305` in MiB/s) via `cmd_benchmark`.
   - **Multi-Factor Keyfile Authentication (`commands/keyfile.rs`, `KeyfileSelector.jsx`):** Combines user password with the SHA-256 fingerprint of an external keyfile (`combine_password_and_keyfile`) before Argon2id derivation, and includes a 4096-byte OS CSPRNG keyfile generator (`cmd_generate_keyfile`).

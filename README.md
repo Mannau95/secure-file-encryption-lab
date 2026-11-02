@@ -41,8 +41,10 @@
 
 ## Key Features
 
-- **Authenticated Encryption with Associated Data (AEAD):** Uses AES-256-GCM to provide both confidential secrecy and cryptographic tamper detection. Any bit flipped in the ciphertext or header triggers an instant authentication failure.
-- **State-of-the-Art Key Derivation:** Employs Argon2id (winner of the Password Hashing Competition) with configurable profiles (`Fast`: 32 MiB, `Standard`: 64 MiB default, `Paranoid`: 256 MiB) to defeat GPU and ASIC accelerated brute-force attacks.
+- **Dual AEAD Cipher Suites (`AES-256-GCM` & `ChaCha20-Poly1305`):** Choose between hardware-accelerated AES-256-GCM and RFC 8439 ARX ChaCha20-Poly1305, automatically encoded in the `.sfel` header and detected upon decryption.
+- **State-of-the-Art Key Derivation & 2FA Keyfiles:** Employs Argon2id (winner of the Password Hashing Competition) with configurable profiles (`Fast`: 32 MiB, `Standard`: 64 MiB default, `Paranoid`: 256 MiB) and optional **Multi-Factor Keyfile Authentication (2FA)** with a built-in 4096-byte OS CSPRNG keyfile generator.
+- **File & Folder Encryption (`.tar` Streaming):** Encrypts both individual files and entire directory trees recursively into a single `.sfel` container, with atomic directory extraction and Zip-Slip / Tar-Slip path traversal protection.
+- **Built-in Hardware Cryptographic Benchmark:** Real-time CPU benchmark in Settings measuring Argon2id latency (ms) across all 3 profiles and AEAD streaming throughput (MiB/s) for AES-256-GCM vs ChaCha20-Poly1305.
 - **High-Entropy Password & Passphrase Generator:** Built-in OS CSPRNG random password generator and Diceware passphrase generator with real-time Shannon entropy and GPU crack-time estimation.
 - **Multi-File Batch Queues:** Sequential batch encryption and decryption queues with per-file progress tracking, retry of failed items, and custom destination folders.
 - **SHA-256 Integrity Verification:** Streaming SHA-256 file fingerprint calculation and verification after encryption/decryption, in batch queues, and in the searchable operation history.
@@ -52,7 +54,7 @@
 - **Crash-Resilient Atomic Writes:** Writes to temporary files first (`.sfel.tmp`) and executes an atomic rename on completion. Interrupted or corrupted operations leave existing files untouched and leave zero leftover artifacts.
 - **Strict Network Isolation:** Configured with Tauri v2 capabilities explicitly denying network access, child shell execution, and clipboard scraping.
 - **Educational Cryptography Lab:** Interactive educational panel explaining how modern block ciphers, nonces, key derivation functions, and binary containers work in practice.
-- **Multi-Theme Support:** Beautiful, accessible UI available in Dark, Light, and Cyberpunk themes.
+- **Multi-Theme Support:** Beautiful, accessible UI available in Dark, Light, and System themes.
 
 ---
 
