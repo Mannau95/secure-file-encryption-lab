@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useOperation } from '../contexts/OperationContext';
 import { getFilenameFromPath } from '../utils/formatters';
+import { computeFileSha256 } from '../utils/hash';
 
 function isTauriEnvironment() {
   return typeof window !== 'undefined' && Boolean(window.__TAURI_INTERNALS__ || window.__TAURI__);
@@ -170,9 +171,16 @@ export function useEncrypt() {
 
         const durationMs = Date.now() - (startTimeRef.current || Date.now());
         const finalPath = typeof response === 'string' ? response : (response?.outputPath || outputPath || `${inputPath}.sfel`);
+        
+        let sourceSha256 = null;
+        try {
+          sourceSha256 = await computeFileSha256(inputPath);
+        } catch {}
+
         const outputResult = {
           outputPath: finalPath,
           bytesEncrypted: fileSize,
+          sha256: sourceSha256,
           durationMs,
         };
 
@@ -191,6 +199,7 @@ export function useEncrypt() {
           inputPath,
           outputPath: outputResult.outputPath,
           fileSize,
+          sha256: sourceSha256,
           status: 'success',
           durationMs,
         });

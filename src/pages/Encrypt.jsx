@@ -5,6 +5,7 @@ import PasswordInput from '../components/PasswordInput';
 import ProgressBar from '../components/ProgressBar';
 import StatusMessage from '../components/StatusMessage';
 import BatchQueue from '../components/BatchQueue';
+import Sha256Inspector from '../components/Sha256Inspector';
 import { useEncrypt } from '../hooks/useEncrypt';
 import { useBatchEncrypt } from '../hooks/useBatchEncrypt';
 import { useI18n } from '../contexts/I18nContext';
@@ -215,6 +216,14 @@ export function Encrypt() {
                   </button>
                 }
               />
+              {result.sha256 && (
+                <Sha256Inspector
+                  hash={result.sha256}
+                  label={t('sha256.sourceLabel')}
+                  description={t('sha256.sourceHint')}
+                  allowVerify={false}
+                />
+              )}
             </div>
           )}
 

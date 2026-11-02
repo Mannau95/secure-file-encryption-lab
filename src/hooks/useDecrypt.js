@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useOperation } from '../contexts/OperationContext';
 import { getFilenameFromPath } from '../utils/formatters';
+import { computeFileSha256 } from '../utils/hash';
 
 function isTauriEnvironment() {
   return typeof window !== 'undefined' && Boolean(window.__TAURI_INTERNALS__ || window.__TAURI__);
@@ -168,10 +169,16 @@ export function useDecrypt() {
         const restoredName = (response && response.originalName) || 
           (finalPath ? getFilenameFromPath(finalPath) : 'restored_file');
 
+        let restoredSha256 = null;
+        try {
+          restoredSha256 = await computeFileSha256(finalPath);
+        } catch {}
+
         const outputResult = {
           outputPath: finalPath,
           originalName: restoredName,
           bytesDecrypted: fileSize,
+          sha256: restoredSha256,
           durationMs,
         };
 
@@ -190,6 +197,7 @@ export function useDecrypt() {
           inputPath,
           outputPath: outputResult.outputPath,
           fileSize,
+          sha256: restoredSha256,
           status: 'success',
           durationMs,
         });

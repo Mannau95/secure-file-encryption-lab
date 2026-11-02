@@ -4,7 +4,12 @@ pub mod error;
 pub mod format;
 pub mod fs;
 
-use commands::{cancel::cmd_cancel, decrypt::cmd_decrypt, encrypt::cmd_encrypt};
+use commands::{
+    cancel::cmd_cancel,
+    decrypt::cmd_decrypt,
+    encrypt::cmd_encrypt,
+    hash::cmd_hash_file,
+};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -14,7 +19,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             cmd_encrypt,
             cmd_decrypt,
-            cmd_cancel
+            cmd_cancel,
+            cmd_hash_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

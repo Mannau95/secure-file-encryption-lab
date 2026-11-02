@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **SHA-256 Integrity Fingerprints:**
+  - Added streaming SHA-256 file hashing in Rust (`crypto/hash.rs`, 64 KiB buffer) exposed via the `cmd_hash_file` Tauri command, with unit tests (empty file, known vector, missing file).
+  - Source file fingerprint shown after encryption; restored file fingerprint shown after decryption, with a paste-to-compare verification field (`Sha256Inspector`).
+  - Fingerprints are recorded in the operation history entries.
+  - No fabricated checksum is ever displayed in the web preview (non-Tauri) environment.
+- **Batch Encryption & Decryption Queues (v0.2.0):** Multi-file drag-and-drop queues with per-file status, progress, retry of failed items and integrity verification.
+- **Password & Passphrase Generator:** CSPRNG-based random password and Diceware passphrase generator integrated in the encryption form.
+- **Bilingual UI (FR / EN):** Complete i18n system with language toggle across all views.
 - **Configurable Argon2id Profiles (v0.2.0):**
   - Added `Argon2Profile` enum supporting `Fast` ($32\text{ MiB}, t=2, p=2$), `Standard` ($64\text{ MiB}, t=3, p=4$), and `Paranoid` ($256\text{ MiB}, t=5, p=8$).
   - Integrated profile selection into `cmd_encrypt` and `encrypt_file_with_profile`.
