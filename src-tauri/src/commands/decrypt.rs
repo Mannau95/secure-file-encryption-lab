@@ -13,6 +13,7 @@ use crate::crypto::kdf::{derive_key, KdfParams};
 use crate::error::SfelError;
 use crate::format::header::{EncryptionMode, SfelHeader};
 use crate::format::validation::{validate_header, validate_paths, validate_password};
+use crate::fs::archive::{extract_folder_tar_atomically, strip_folder_archive_suffix};
 use crate::fs::temp::TempFileGuard;
 
 /// Payload emitted during decryption progress updates.
@@ -91,8 +92,16 @@ where
     };
     let key = derive_key(password.as_bytes(), &header.salt, &kdf_params)?;
 
-    // 5. Determine destination path safely
-    let target_name = if !header.original_name.is_empty() {
+    // 5. Determine destination path safely (detecting whether container holds a folder archive)
+    let is_folder_archive = strip_folder_archive_suffix(&header.original_name);
+
+    let target_name = if let Some(folder_name) = is_folder_archive {
+        Path::new(folder_name)
+            .file_name()
+            .and_then(|s| s.to_str())
+            .unwrap_or("decrypted_folder")
+            .to_string()
+    } else if !header.original_name.is_empty() {
         Path::new(&header.original_name)
             .file_name()
             .and_then(|s| s.to_str())
@@ -163,8 +172,14 @@ where
         }
     }
 
-    // 8. Atomically persist temp file to final destination once ALL data is authenticated
-    temp.persist_to(&dest_path)?;
+    // 8. Atomically persist temp file (or extract directory archive) once ALL data is authenticated
+    if is_folder_archive.is_some() {
+        temp.file_mut()?.sync_all()?;
+        extract_folder_tar_atomically(temp.path(), &dest_path)?;
+        // `temp` drops here and removes the temporary `.tar` file automatically
+    } else {
+        temp.persist_to(&dest_path)?;
+    }
 
     Ok(dest_path)
 }

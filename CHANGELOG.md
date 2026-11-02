@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Folder Archival & Encryption (v0.2.0):**
+  - Added recursive directory packing (`fs/archive.rs`) using TAR archives (`follow_symlinks(false)`) encrypted directly into a single `.sfel` container.
+  - Added atomic directory extraction upon decryption with strict Zip-Slip / Tar-Slip path traversal protection (`..`, absolute roots, and symlink/hardlink rejection).
+  - Added "Choose an Entire Folder" button in `FileDropZone` (single and batch encryption modes).
 - **SHA-256 Integrity Fingerprints:**
   - Added streaming SHA-256 file hashing in Rust (`crypto/hash.rs`, 64 KiB buffer) exposed via the `cmd_hash_file` Tauri command, with unit tests (empty file, known vector, missing file).
   - Source file fingerprint shown after encryption; restored file fingerprint shown after decryption, with a paste-to-compare verification field (`Sha256Inspector`).

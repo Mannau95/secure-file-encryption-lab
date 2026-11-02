@@ -135,6 +135,7 @@ export function BatchQueue({
         <div className="batch-drop-wrapper">
           <FileDropZone
             multiple={true}
+            allowDirectory={true}
             onFilesSelect={onAddFiles}
             label={t('batch.emptyQueuePrompt')}
             description={t('dropzone.selected')}

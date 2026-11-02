@@ -242,10 +242,13 @@ export const fr = {
   },
   dropzone: {
     dragActive: 'Déposez votre fichier ici...',
-    dragPrompt: 'Glissez-déposez votre fichier ici, ou',
-    browseBtn: 'parcourir sur l\'appareil',
-    selected: 'Fichier sélectionné',
-    changeFile: 'Changer de fichier',
+    dragPrompt: 'Glissez-déposez un fichier ici, ou sélectionnez :',
+    browseBtn: 'Choisir un fichier',
+    browseFolderBtn: 'Choisir un dossier entier',
+    folderBadge: 'Dossier complet (archive TAR chiffrée)',
+    folderPrompt: 'Entrez le chemin du dossier à chiffrer :',
+    selected: 'Élément sélectionné',
+    changeFile: 'Changer la sélection',
   },
   progress: {
     derivingKey: 'Dérivation de la clé cryptographique (Argon2id)...',

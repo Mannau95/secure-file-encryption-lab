@@ -92,3 +92,55 @@ fn test_roundtrip_unicode_filenames() {
         run_roundtrip_test(name, content.as_bytes(), "unicode_pass");
     }
 }
+
+
+#[test]
+fn test_roundtrip_folder_archive() {
+    use sfel_lib::commands::encrypt::encrypt_file_with_profile;
+    use sfel_lib::crypto::kdf::Argon2Profile;
+
+    let temp = tempdir().expect("Failed to create temporary directory");
+    let source_folder = temp.path().join("ConfidentialProject");
+    let nested_dir = source_folder.join("docs").join("2026");
+    let enc_dir = temp.path().join("encrypted");
+    let dec_dir = temp.path().join("decrypted");
+
+    fs::create_dir_all(&nested_dir).unwrap();
+    fs::create_dir(&enc_dir).unwrap();
+    fs::create_dir(&dec_dir).unwrap();
+
+    fs::write(source_folder.join("summary.txt"), b"Top secret summary").unwrap();
+    fs::write(nested_dir.join("report.bin"), &[0xDE, 0xAD, 0xBE, 0xEF]).unwrap();
+
+    let enc_path = encrypt_file_with_profile(
+        &source_folder,
+        "folder_master_pass",
+        &enc_dir,
+        Some(Argon2Profile::Fast),
+        |_, _, _| {},
+    )
+    .expect("Folder encryption failed");
+
+    assert!(enc_path.exists());
+    assert_eq!(
+        enc_path.file_name().unwrap().to_str().unwrap(),
+        "ConfidentialProject.sfel"
+    );
+
+    let dec_path = decrypt_file(&enc_path, "folder_master_pass", &dec_dir, |_, _, _| {})
+        .expect("Folder decryption failed");
+
+    assert!(dec_path.is_dir());
+    assert_eq!(
+        dec_path.file_name().unwrap().to_str().unwrap(),
+        "ConfidentialProject"
+    );
+    assert_eq!(
+        fs::read(dec_path.join("summary.txt")).unwrap(),
+        b"Top secret summary"
+    );
+    assert_eq!(
+        fs::read(dec_path.join("docs").join("2026").join("report.bin")).unwrap(),
+        &[0xDE, 0xAD, 0xBE, 0xEF]
+    );
+}

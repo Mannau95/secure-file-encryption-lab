@@ -277,6 +277,7 @@ export function Encrypt() {
                 <div className="step-body">
                   <FileDropZone
                     multiple={true}
+                    allowDirectory={true}
                     selectedFile={selectedFile}
                     onFileSelect={(f) => {
                       setSelectedFile(f);

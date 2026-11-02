@@ -242,10 +242,13 @@ export const en = {
   },
   dropzone: {
     dragActive: 'Drop your file here now...',
-    dragPrompt: 'Drag & drop your file here, or',
-    browseBtn: 'browse on device',
-    selected: 'Selected File',
-    changeFile: 'Choose different file',
+    dragPrompt: 'Drag & drop a file here, or select:',
+    browseBtn: 'Choose a File',
+    browseFolderBtn: 'Choose an Entire Folder',
+    folderBadge: 'Full Folder (encrypted TAR archive)',
+    folderPrompt: 'Enter folder path to encrypt:',
+    selected: 'Selected Item',
+    changeFile: 'Change selection',
   },
   progress: {
     derivingKey: 'Deriving cryptographic key (Argon2id)...',

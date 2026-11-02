@@ -45,7 +45,7 @@ This roadmap outlines the planned development milestones for the Secure File Enc
 **Focus:** Enhanced user workflow, batch processing, password generation/quality feedback, bilingual UI, and SHA-256 auditing.
 
 - [x] **Batch Processing:** Multi-file drag-and-drop encryption and decryption queue with per-file progress and retry support.
-- [ ] **Folder Archival & Encryption:** Tar/zip streaming integration to encrypt entire directory structures into a single `.sfel` container.
+- [x] **Folder Archival & Encryption:** Tar streaming integration to encrypt entire directory structures into a single `.sfel` container and automatically extract them upon decryption.
 - [x] **Real-time Password Entropy Meter:** Shannon/NIST pool entropy estimator with bits display and offline crack time estimation.
 - [x] **High-Entropy Password & Passphrase Generator:** Built-in CSPRNG character generator and Diceware passphrase generator.
 - [x] **SHA-256 Integrity Fingerprints:** Streaming SHA-256 checksum computation (`cmd_hash_file`), post-operation verification inspector (`Sha256Inspector`), and batch/history hash tracking.

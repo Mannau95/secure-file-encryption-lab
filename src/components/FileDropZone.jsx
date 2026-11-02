@@ -15,6 +15,7 @@ export function FileDropZone({
   onClear = null,
   accept = null, // e.g., ['.sfel'] or ['sfel']
   multiple = false,
+  allowDirectory = false,
   label = null,
   description = null,
   disabled = false,
@@ -130,6 +131,53 @@ export function FileDropZone({
     }
   };
 
+  const handleBrowseFolder = async (e) => {
+    e.stopPropagation();
+    if (disabled) return;
+
+    if (isTauriEnvironment()) {
+      try {
+        const selected = await open({
+          multiple: false,
+          directory: true,
+        });
+
+        if (selected && typeof selected === 'string') {
+          const folderObj = {
+            path: selected,
+            name: getFilenameFromPath(selected),
+            size: 0,
+            isDirectory: true,
+          };
+          if (onFileSelect) {
+            onFileSelect(folderObj);
+          } else if (multiple && onFilesSelect) {
+            onFilesSelect([folderObj]);
+          }
+        }
+        return;
+      } catch (err) {
+        console.warn('Tauri folder dialog failed', err);
+      }
+    }
+
+    const manualFolder = window.prompt(t('dropzone.folderPrompt'));
+    if (manualFolder && manualFolder.trim()) {
+      const clean = manualFolder.trim();
+      const folderObj = {
+        path: clean,
+        name: getFilenameFromPath(clean),
+        size: 0,
+        isDirectory: true,
+      };
+      if (onFileSelect) {
+        onFileSelect(folderObj);
+      } else if (multiple && onFilesSelect) {
+        onFilesSelect([folderObj]);
+      }
+    }
+  };
+
   const handleInputChange = (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
@@ -195,33 +243,60 @@ export function FileDropZone({
             <p className="drop-title">{displayLabel}</p>
             <p className="drop-desc">{displayDescription}</p>
           </div>
-          <button
-            type="button"
-            className="btn btn-secondary browse-btn"
-            disabled={disabled}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleBrowse();
-            }}
-          >
-            {t('dropzone.browseBtn')}
-          </button>
+          <div className="drop-actions-row">
+            <button
+              type="button"
+              className="btn btn-secondary browse-btn"
+              disabled={disabled}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleBrowse();
+              }}
+            >
+              📄 {t('dropzone.browseBtn')}
+            </button>
+
+            {allowDirectory && (
+              <button
+                type="button"
+                className="btn btn-secondary browse-btn browse-folder-btn"
+                disabled={disabled}
+                onClick={handleBrowseFolder}
+              >
+                📁 {t('dropzone.browseFolderBtn')}
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         <div className="selected-file-card">
           <div className="file-icon-wrapper" aria-hidden="true">
-            <svg
-              className="file-card-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
-              <polyline points="13 2 13 9 20 9" />
-            </svg>
+            {selectedFile.isDirectory ? (
+              <svg
+                className="file-card-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+              </svg>
+            ) : (
+              <svg
+                className="file-card-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                <polyline points="13 2 13 9 20 9" />
+              </svg>
+            )}
           </div>
 
           <div className="file-details">
@@ -229,8 +304,12 @@ export function FileDropZone({
               {selectedFile.name || getFilenameFromPath(selectedFile.path)}
             </span>
             <div className="file-meta">
-              {selectedFile.size > 0 && (
-                <span className="file-size">{formatBytes(selectedFile.size)}</span>
+              {selectedFile.isDirectory ? (
+                <span className="file-size folder-badge">📁 {t('dropzone.folderBadge')}</span>
+              ) : (
+                selectedFile.size > 0 && (
+                  <span className="file-size">{formatBytes(selectedFile.size)}</span>
+                )
               )}
               <span className="file-path-preview" title={selectedFile.path}>
                 {selectedFile.path}

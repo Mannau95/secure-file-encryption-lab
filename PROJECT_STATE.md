@@ -1,6 +1,6 @@
 # Project State: Secure File Encryption Lab (SFEL)
 
-**Current Status:** Phases 1 to 7 Complete (Full Test Suite Validated: 57 tests passing)  
+**Current Status:** Phases 1 to 7 Complete — v0.2.0 Milestone 100% Complete (Full Test Suite Validated: 60 tests passing)  
 **Last Updated:** November 2026  
 **Current Version:** v0.2.0
 
@@ -38,8 +38,9 @@
   - [x] `validation.rs`: Strict validation of Argon2 parameters, file sizes, and paths.
   - [x] `temp.rs`: RAII `TempFileGuard` ensuring automatic cleanup of temp files upon cancellation or error.
   - [x] `atomic.rs`: Atomic replacement via `fs::rename`.
-  - [x] `commands/encrypt.rs`: Command streaming encryption with profile selection and event progress.
-  - [x] `commands/decrypt.rs`: Command streaming decryption with tamper detection.
+  - [x] `archive.rs`: Recursive directory TAR packing (`follow_symlinks(false)`) and atomic directory extraction with Zip-Slip / Tar-Slip path traversal protection.
+  - [x] `commands/encrypt.rs`: Command streaming encryption (files and entire directories) with profile selection and event progress.
+  - [x] `commands/decrypt.rs`: Command streaming decryption (files and automatic directory archive extraction) with tamper detection.
   - [x] `commands/cancel.rs`: Cancellation token mechanism for immediate abort without disk residue.
   - [x] `commands/hash.rs`: Tauri IPC command `cmd_hash_file` computing streaming SHA-256 checksums.
 - [x] **React Frontend Application & v0.2.0 Features (Phases 4 & 7)**
@@ -71,12 +72,12 @@
   - Configured MSVC C++ Build Tools (`link.exe` and Windows SDK).
   - Fixed Tauri 2 configuration schema (`tauri.conf.json`) and updated CSPRNG bindings for `rand 0.9` (`TryRngCore`).
 - [x] **Full Cryptographic Test Suite Execution (`cargo test`):**
-  - **39 unit tests** in `sfel_lib`: Argon2id KDF & profiles, AES-256-GCM AEAD, streaming chunks, SHA-256 file hashing, RAII `TempFileGuard`, atomic write, cancellation tokens.
+  - **41 unit tests** in `sfel_lib`: Argon2id KDF & profiles, AES-256-GCM AEAD, streaming chunks, SHA-256 file hashing, RAII `TempFileGuard`, atomic write, TAR directory archival/extraction, cancellation tokens.
   - **2 crypto tests** in `crypto_tests.rs`: Determinism and single-mode roundtrip.
   - **3 format tests** in `format_tests.rs`: Header validation bounds, magic bytes, version checks, and serialization.
-  - **7 roundtrip tests** in `roundtrip_tests.rs`: 1 byte, 1 KiB, 1 MiB, 1 MiB + 1, 5 MiB, empty file, and Unicode filenames.
+  - **8 roundtrip tests** in `roundtrip_tests.rs`: 1 byte, 1 KiB, 1 MiB, 1 MiB + 1, 5 MiB, empty file, Unicode filenames, and nested folder archive encryption/decryption.
   - **6 security tests** in `security_tests.rs`: Chunk corruption detection, chunk reorder detection, header tampering, zero partial output on failure, truncation detection, and wrong password rejection.
-  - **Summary: 57 tests passed, 0 failed.**
+  - **Summary: 60 tests passed, 0 failed.**
 - [x] **Frontend Production Build:**
   - Verified clean build (`npm run build`) with zero errors.
 
@@ -84,9 +85,7 @@
 
 ## 4. Next Steps
 
-1. **Folder Archival & Encryption (v0.2.0 remaining item):**
-   - Add directory streaming / archival support (`.tar` / `.zip` stream into `.sfel`) to encrypt and restore entire folders.
-2. **v0.3.0 Advanced Cryptography:**
+1. **v0.3.0 Advanced Cryptography:**
    - Implement XChaCha20-Poly1305 cipher suite option, keyfile multi-factor authentication, and hardware benchmarking tool.
-3. **Packaging & Distribution:**
+2. **Packaging & Distribution:**
    - Execute `npm run tauri build` to generate native Windows installer bundles (`.msi` / NSIS).

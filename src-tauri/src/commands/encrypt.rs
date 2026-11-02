@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::Write;
+use std::io::{Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
@@ -12,8 +12,9 @@ use crate::crypto::chunks::encrypt_stream;
 use crate::crypto::kdf::{derive_key, Argon2Profile};
 use crate::crypto::rng::{random_base_nonce, random_nonce, random_salt};
 use crate::error::SfelError;
-use crate::format::header::{EncryptionMode, SfelHeader};
-use crate::format::validation::{validate_paths, validate_password};
+use crate::format::header::{EncryptionMode, SfelHeader, MAX_NAME_LEN};
+use crate::format::validation::{validate_password, validate_source_and_dest};
+use crate::fs::archive::{create_folder_tar, make_folder_archive_name};
 use crate::fs::temp::TempFileGuard;
 
 /// Payload emitted during encryption progress updates.
@@ -52,21 +53,17 @@ pub fn encrypt_file_with_profile<P>(
 where
     P: FnMut(f64, u64, u64),
 {
-    // 1. Validate inputs
-    validate_paths(source_path, dest_dir)?;
+    // 1. Validate inputs (accepts both a regular file and a directory)
+    validate_source_and_dest(source_path, dest_dir)?;
     validate_password(password)?;
 
-    // 2. Prepare file metadata
-    let source_file = File::open(source_path)?;
-    let total_bytes = source_file.metadata()?.len();
-
-    let original_name = source_path
+    let raw_name = source_path
         .file_name()
         .and_then(|s| s.to_str())
         .ok_or_else(|| SfelError::InvalidParameters("Invalid source filename".into()))?
         .to_string();
 
-    let dest_filename = format!("{original_name}.sfel");
+    let dest_filename = format!("{raw_name}.sfel");
     let dest_path = dest_dir.join(dest_filename);
 
     if dest_path.exists() {
@@ -75,6 +72,26 @@ where
 
     // Reset cancellation state before starting
     reset_cancel();
+
+    // 2. Prepare payload source (either direct file or temporary TAR archive for a directory)
+    let is_directory = source_path.is_dir();
+    let mut temp_tar_guard: Option<TempFileGuard> = None;
+
+    let (mut source_file, total_bytes, original_name) = if is_directory {
+        let archive_header_name = make_folder_archive_name(&raw_name, MAX_NAME_LEN);
+        let mut tar_guard = TempFileGuard::create_in_same_dir(&dest_path)?;
+        create_folder_tar(source_path, tar_guard.file_mut()?)?;
+        tar_guard.file_mut()?.flush()?;
+        tar_guard.file_mut()?.seek(SeekFrom::Start(0))?;
+        let len = tar_guard.file_mut()?.metadata()?.len();
+        let read_handle = File::open(tar_guard.path())?;
+        temp_tar_guard = Some(tar_guard);
+        (read_handle, len, archive_header_name)
+    } else {
+        let f = File::open(source_path)?;
+        let len = f.metadata()?.len();
+        (f, len, raw_name)
+    };
 
     // 3. Setup cryptographic parameters
     let salt = random_salt();
@@ -120,12 +137,14 @@ where
             return Err(SfelError::Cancelled);
         }
 
-        let mut plaintext = std::fs::read(source_path)?;
+        let mut plaintext = Vec::with_capacity(total_bytes as usize);
+        std::io::Read::read_to_end(&mut source_file, &mut plaintext)?;
         let mut ciphertext = encrypt_single(&key, &nonce, &header_bytes, &plaintext)?;
         plaintext.zeroize();
 
         temp.file_mut()?.write_all(&ciphertext)?;
         ciphertext.zeroize();
+        drop(source_file);
 
         progress(100.0, total_bytes, total_bytes);
     } else {
@@ -147,6 +166,9 @@ where
             },
         )?;
     }
+
+    // Clean up temporary TAR archive if source was a directory
+    drop(temp_tar_guard);
 
     // 7. Atomically persist temp file to final destination
     temp.persist_to(&dest_path)?;

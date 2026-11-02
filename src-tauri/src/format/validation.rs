@@ -144,6 +144,29 @@ pub fn validate_header(header: &SfelHeader) -> Result<(), SfelError> {
     Ok(())
 }
 
+/// Validates source file or directory and destination directory paths.
+pub fn validate_source_and_dest(source_path: &Path, dest_dir: &Path) -> Result<(), SfelError> {
+    if !source_path.exists() {
+        return Err(SfelError::FileNotFound(source_path.display().to_string()));
+    }
+    if !source_path.is_file() && !source_path.is_dir() {
+        return Err(SfelError::InvalidParameters(format!(
+            "Source path '{}' is neither a regular file nor a directory",
+            source_path.display()
+        )));
+    }
+    if !dest_dir.exists() {
+        return Err(SfelError::FileNotFound(dest_dir.display().to_string()));
+    }
+    if !dest_dir.is_dir() {
+        return Err(SfelError::InvalidParameters(format!(
+            "Destination path '{}' is not a directory",
+            dest_dir.display()
+        )));
+    }
+    Ok(())
+}
+
 /// Validates source file and destination directory paths.
 pub fn validate_paths(source_path: &Path, dest_dir: &Path) -> Result<(), SfelError> {
     if !source_path.exists() {

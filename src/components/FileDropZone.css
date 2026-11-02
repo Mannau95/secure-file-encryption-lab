@@ -174,3 +174,22 @@
   width: 18px;
   height: 18px;
 }
+
+.drop-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.drop-actions-row .browse-btn {
+  margin-top: 0;
+}
+
+.folder-badge {
+  color: var(--color-accent);
+  background-color: var(--color-accent-subtle);
+  font-weight: 600;
+}
