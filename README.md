@@ -42,7 +42,11 @@
 ## Key Features
 
 - **Authenticated Encryption with Associated Data (AEAD):** Uses AES-256-GCM to provide both confidential secrecy and cryptographic tamper detection. Any bit flipped in the ciphertext or header triggers an instant authentication failure.
-- **State-of-the-Art Key Derivation:** Employs Argon2id (winner of the Password Hashing Competition) configured with 64 MiB of memory, 3 iterations, and 4 lanes to defeat GPU and ASIC accelerated brute-force attacks.
+- **State-of-the-Art Key Derivation:** Employs Argon2id (winner of the Password Hashing Competition) with configurable profiles (`Fast`: 32 MiB, `Standard`: 64 MiB default, `Paranoid`: 256 MiB) to defeat GPU and ASIC accelerated brute-force attacks.
+- **High-Entropy Password & Passphrase Generator:** Built-in OS CSPRNG random password generator and Diceware passphrase generator with real-time Shannon entropy and GPU crack-time estimation.
+- **Multi-File Batch Queues:** Sequential batch encryption and decryption queues with per-file progress tracking, retry of failed items, and custom destination folders.
+- **SHA-256 Integrity Verification:** Streaming SHA-256 file fingerprint calculation and verification after encryption/decryption, in batch queues, and in the searchable operation history.
+- **Bilingual Interface (FR / EN):** Instant language switching between French and English across all views.
 - **Chunked Streaming Engine (Constant Memory):** Encrypts and decrypts files in 1 MiB authenticated chunks. Files of any size (from kilobytes to gigabytes) are processed without loading the entire payload into RAM.
 - **Cryptographic Anti-Tamper Chaining:** Each chunk binds its unique chunk index and final-chunk flag into the AEAD Associated Data (AAD), preventing chunk deletion, reordering, duplication, or truncation.
 - **Crash-Resilient Atomic Writes:** Writes to temporary files first (`.sfel.tmp`) and executes an atomic rename on completion. Interrupted or corrupted operations leave existing files untouched and leave zero leftover artifacts.

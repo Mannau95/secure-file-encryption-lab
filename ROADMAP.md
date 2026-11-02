@@ -18,36 +18,39 @@ This roadmap outlines the planned development milestones for the Secure File Enc
 
 ---
 
-### v0.1.0 — Minimum Viable Product (Current Target)
+### v0.1.0 — Minimum Viable Product (Complete)
 
 **Focus:** Core cryptographic engine, secure atomic streaming I/O, safe defaults, and educational interface.
 
 - [x] Application architecture and Tauri 2 scaffolding.
-- [ ] SFEL v1 file format specification and serialization/deserialization engine.
-- [ ] Authenticated encryption with AES-256-GCM (128-bit tag).
-- [ ] Key derivation with Argon2id ($m=64\text{ MiB}, t=3, p=4$).
-- [ ] Safe streaming I/O with 1 MiB chunking for files of any size.
-- [ ] Atomic file creation with temporary file cleanup on interruption or failure.
-- [ ] Zero network access capability restriction in Tauri configuration.
-- [ ] Clean React UI with single-file drag-and-drop encryption and decryption.
-- [ ] Real-time operation progress reporting and graceful cancellation.
-- [ ] Multi-theme support: Dark (default), Light, and Cyberpunk.
-- [ ] Interactive Cryptography Educational Lab page explaining:
+- [x] SFEL v1 file format specification and serialization/deserialization engine.
+- [x] Authenticated encryption with AES-256-GCM (128-bit tag).
+- [x] Key derivation with Argon2id ($m=64\text{ MiB}, t=3, p=4$).
+- [x] Safe streaming I/O with 1 MiB chunking for files of any size.
+- [x] Atomic file creation with temporary file cleanup on interruption or failure.
+- [x] Zero network access capability restriction in Tauri configuration.
+- [x] Clean React UI with single-file drag-and-drop encryption and decryption.
+- [x] Real-time operation progress reporting and graceful cancellation.
+- [x] Multi-theme support: Dark (default), Light, and System.
+- [x] Interactive Cryptography Educational Lab page explaining:
   - Symmetric AEAD vs plain stream/block ciphers.
   - Argon2id memory hardness against ASIC and GPU attacks.
   - Byte-by-byte visual breakdown of the `.sfel` header.
-- [ ] Initial suite of unit tests and integration tests.
+- [x] Initial suite of unit tests and integration tests.
 
 ---
 
-### v0.2.0 — Usability & Batch Operations
+### v0.2.0 — Usability, Batch Operations & Integrity Verification (Current Milestone)
 
-**Focus:** Enhanced user workflow, password quality feedback, and auditing history.
+**Focus:** Enhanced user workflow, batch processing, password generation/quality feedback, bilingual UI, and SHA-256 auditing.
 
-- [ ] **Batch Processing:** Multi-file drag-and-drop encryption and decryption queue.
+- [x] **Batch Processing:** Multi-file drag-and-drop encryption and decryption queue with per-file progress and retry support.
 - [ ] **Folder Archival & Encryption:** Tar/zip streaming integration to encrypt entire directory structures into a single `.sfel` container.
 - [x] **Real-time Password Entropy Meter:** Shannon/NIST pool entropy estimator with bits display and offline crack time estimation.
-- [x] **Operation History & Verification Log:** Local in-memory and persistent storage of recent operations (paths, timestamps, status).
+- [x] **High-Entropy Password & Passphrase Generator:** Built-in CSPRNG character generator and Diceware passphrase generator.
+- [x] **SHA-256 Integrity Fingerprints:** Streaming SHA-256 checksum computation (`cmd_hash_file`), post-operation verification inspector (`Sha256Inspector`), and batch/history hash tracking.
+- [x] **Operation History & Verification Log:** Local in-memory and persistent storage of recent operations (paths, SHA-256 hashes, timestamps, status) with search and filtering.
+- [x] **Bilingual Interface (FR / EN):** Complete French and English localization across all views and components.
 - [x] **Configurable Argon2id Profiles:**
   - *Fast / Low-Resource:* $m=32\text{ MiB}, t=2, p=2$ (for resource-constrained environments).
   - *Standard:* $m=64\text{ MiB}, t=3, p=4$ (recommended default).
@@ -62,7 +65,7 @@ This roadmap outlines the planned development milestones for the Secure File Enc
 
 - [ ] **XChaCha20-Poly1305 Cipher Suite:** Support for 192-bit extended nonces, removing nonce collision risks even across billions of operations.
 - [ ] **Keyfile Authentication:** Multi-factor derivation combining user password with an external keyfile (e.g., USB key or random binary file).
-- [ ] **Internationalization (i18n):** Complete localized UI strings (English, Spanish, French, German, Japanese, Simplified Chinese).
+- [ ] **Extended Internationalization (i18n):** Additional localized UI strings beyond English & French (Spanish, German, Japanese, Simplified Chinese).
 - [ ] **Cross-Platform Hardening & CI:**
   - Automated CI test matrix across Windows 11, macOS (Apple Silicon & Intel), and Ubuntu Linux.
   - Verification of OS-level atomic renames across APFS, NTFS, and ext4 filesystems.

@@ -1,6 +1,6 @@
 [package]
 name = "secure-file-encryption-lab"
-version = "0.1.0"
+version = "0.2.0"
 description = "Professional desktop file encryption using AES-256-GCM and Argon2id"
 authors = ["SFEL Developer"]
 license = "MIT OR Apache-2.0"

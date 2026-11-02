@@ -1,7 +1,7 @@
 {
   "name": "secure-file-encryption-lab",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A professional desktop file encryption application using AES-256-GCM and Argon2id",
   "type": "module",
   "scripts": {
