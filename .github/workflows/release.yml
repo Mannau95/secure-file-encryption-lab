@@ -36,7 +36,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev \
-            libappindicator3-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
             librsvg2-dev \
             patchelf
 
@@ -71,6 +77,6 @@ jobs:
           tagName: v__VERSION__
           releaseName: "Secure File Encryption Lab v__VERSION__"
           releaseBody: "Production installers for Secure File Encryption Lab (SFEL). Verify SHA-256 checksums before installation."
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
