@@ -4,3 +4,4 @@ pub mod cancel;
 pub mod hash;
 pub mod keyfile;
 pub mod benchmark;
+pub mod verify;

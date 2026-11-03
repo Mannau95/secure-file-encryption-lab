@@ -11,6 +11,7 @@ use commands::{
     encrypt::cmd_encrypt,
     hash::cmd_hash_file,
     keyfile::cmd_generate_keyfile,
+    verify::{cmd_inspect_file_integrity, cmd_verify_sfel_container},
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -24,7 +25,9 @@ pub fn run() {
             cmd_cancel,
             cmd_hash_file,
             cmd_generate_keyfile,
-            cmd_benchmark
+            cmd_benchmark,
+            cmd_inspect_file_integrity,
+            cmd_verify_sfel_container
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

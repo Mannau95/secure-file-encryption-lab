@@ -19,6 +19,8 @@ export function Layout() {
         return t('nav.encrypt');
       case '/decrypt':
         return t('nav.decrypt');
+      case '/verify':
+        return t('nav.verify');
       case '/education':
         return t('nav.education');
       case '/history':
@@ -125,6 +127,28 @@ export function Layout() {
                   <path d="M7 11V7a5 5 0 0 1 9.9-1" />
                 </svg>
                 <span className="nav-label">{t('nav.decrypt')}</span>
+              </NavLink>
+            </li>
+
+            <li>
+              <NavLink
+                to="/verify"
+                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+              >
+                <svg
+                  className="nav-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  <path d="M9 12l2 2 4-4" />
+                </svg>
+                <span className="nav-label">{t('nav.verify')}</span>
               </NavLink>
             </li>
 

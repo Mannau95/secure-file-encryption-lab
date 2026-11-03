@@ -4,6 +4,7 @@ import Layout from './components/Layout';
 import Home from './pages/Home';
 import Encrypt from './pages/Encrypt';
 import Decrypt from './pages/Decrypt';
+import Verify from './pages/Verify';
 import Education from './pages/Education';
 import History from './pages/History';
 import Settings from './pages/Settings';
@@ -16,6 +17,7 @@ export function App() {
           <Route index element={<Home />} />
           <Route path="encrypt" element={<Encrypt />} />
           <Route path="decrypt" element={<Decrypt />} />
+          <Route path="verify" element={<Verify />} />
           <Route path="education" element={<Education />} />
           <Route path="history" element={<History />} />
           <Route path="settings" element={<Settings />} />
